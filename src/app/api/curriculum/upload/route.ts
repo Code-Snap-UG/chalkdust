@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
 import { PDFParse } from "pdf-parse";
-import { generateObject } from "ai";
 import { getModel } from "@/lib/ai";
-import { curriculumTopicExtractionSchema } from "@/lib/ai/schemas";
+import {
+  curriculumTopicExtractionSchema,
+  type CurriculumTopicExtraction,
+} from "@/lib/ai/schemas";
 import { curriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
+import { tracedGenerateObject } from "@/lib/ai/trace";
+
+const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,13 +49,21 @@ export async function POST(request: NextRequest) {
     }
 
     const truncatedText = parsedText.slice(0, 30000);
+    const userPrompt = `Hier ist der Text des Kerncurriculums:\n\n${truncatedText}`;
 
-    const { object } = await generateObject({
-      model: getModel("high"),
-      schema: curriculumTopicExtractionSchema,
-      system: curriculumExtractionPrompt,
-      prompt: `Hier ist der Text des Kerncurriculums:\n\n${truncatedText}`,
-    });
+    const { object } = await tracedGenerateObject<CurriculumTopicExtraction>(
+      {
+        model: getModel("fast"),
+        schema: curriculumTopicExtractionSchema,
+        system: curriculumExtractionPrompt,
+        prompt: userPrompt,
+      },
+      {
+        agentMode: "curriculum_extraction",
+        teacherId: HARDCODED_TEACHER_ID,
+        inputParams: { fileName: file.name, textLength: truncatedText.length },
+      },
+    );
 
     return NextResponse.json({
       fileName: file.name,
