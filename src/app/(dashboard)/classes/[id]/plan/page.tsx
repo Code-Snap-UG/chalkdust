@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,14 +91,27 @@ export default function PlanLessonPage() {
       .catch(() => {});
   }, [classGroupId]);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      api: "/api/chat",
-      body: { lessonPlanId: planId },
-      onFinish: () => {
-        if (planId) refreshPlan(planId);
-      },
-    });
+  const [chatInput, setChatInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+      }),
+    []
+  );
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport,
+    onFinish: () => {
+      if (planId) refreshPlan(planId);
+    },
+  });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   async function refreshPlan(id: string) {
     const res = await fetch(`/api/lesson-plans/${id}`);
@@ -413,33 +427,62 @@ export default function PlanLessonPage() {
                 <CardContent>
                   {messages.length > 0 && (
                     <div className="mb-3 max-h-48 space-y-2 overflow-y-auto">
-                      {messages.map((m) => (
-                        <div
-                          key={m.id}
-                          className={`text-sm ${m.role === "user" ? "text-foreground" : "text-muted-foreground"}`}
-                        >
-                          <span className="font-medium">
-                            {m.role === "user" ? "Du: " : "KI: "}
-                          </span>
-                          {m.content}
+                      {messages.map((m) => {
+                          const hasText = m.parts.some(
+                            (p) => p.type === "text" && p.text.trim()
+                          );
+                          if (!hasText && m.role === "assistant") return null;
+                          return (
+                            <div
+                              key={m.id}
+                              className={`text-sm ${m.role === "user" ? "text-foreground" : "text-muted-foreground"}`}
+                            >
+                              <span className="font-medium">
+                                {m.role === "user" ? "Du: " : "KI: "}
+                              </span>
+                              {m.parts.map((part, i) =>
+                                part.type === "text" ? (
+                                  <span key={i}>{part.text}</span>
+                                ) : null
+                              )}
+                            </div>
+                          );
+                        })}
+                      {(status === "streaming" || status === "submitted") && (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Loader2 className="size-3 animate-spin" />
+                          KI antwortet...
                         </div>
-                      ))}
+                      )}
+                      <div ref={messagesEndRef} />
                     </div>
                   )}
+                  {error && (
+                    <p className="mb-3 text-sm text-destructive">
+                      Fehler: {error.message}
+                    </p>
+                  )}
                   <form
-                    onSubmit={handleSubmit}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (chatInput.trim() && status === "ready") {
+                        sendMessage({ text: chatInput }, { body: { lessonPlanId: planId } });
+                        setChatInput("");
+                      }
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Input
-                      value={input}
-                      onChange={handleInputChange}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
                       placeholder="z.B. Mach die Gruppenarbeit kürzer..."
                       className="flex-1"
+                      disabled={status !== "ready"}
                     />
                     <Button
                       type="submit"
                       size="icon"
-                      disabled={isLoading || !input}
+                      disabled={status !== "ready" || !chatInput.trim()}
                     >
                       <Send className="size-4" />
                     </Button>

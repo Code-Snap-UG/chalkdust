@@ -586,9 +586,12 @@ Not the entire Kerncurriculum -- only the relevant section. Strategy:
 
 **Layer 6 -- Recent Diary Entries (dynamic):**
 
-- Last 5-10 diary entries for this class, most recent first
-- Each entry condensed to: date, topic, status, teacher notes (if any), and a one-line summary of attached materials
-- If entries are verbose, summarize them (could be a pre-processing step, or just truncate)
+Diary entries are split into two context sections based on `progressStatus`:
+
+- **Taught entries** (`completed`, `partial`, `deviated`) go into `## Letzte Stunden (Klassentagebuch)` -- up to 10, most recent first. Each is formatted with a status label and smart content selection (see section 6.3a for the full strategy, including vagueness detection and lesson plan fallback).
+- **Planned entries** (`planned`) go into a separate `## Geplante Stunden (noch nicht durchgeführt)` section -- up to 3, so the LLM knows what is upcoming without confusing it with past lessons.
+
+Entries are fetched via a LEFT JOIN with `lesson_plans` so that structured plan data (topic, objectives, timeline phases) is available as a fallback when the teacher's diary summary is missing or uninformative.
 
 **Layer 7 -- Predecessor Transition Summary (dynamic, optional):**
 
@@ -600,6 +603,95 @@ Not the entire Kerncurriculum -- only the relevant section. Strategy:
 
 - Date, duration, selected topic, learning goals, additional notes
 - Passed as structured data so the LLM can reference it clearly
+
+### 6.3a Diary Entry Context Assembly Strategy
+
+This subsection documents the full strategy for turning raw diary entries into useful AI context. It is the single source of truth for the logic implemented in `src/lib/ai/context.ts`.
+
+#### Motivation
+
+When a lesson plan is approved, a diary entry is auto-created with a `plannedSummary` (serialized from the plan's topic and timeline) and `progressStatus: "planned"`. The teacher later updates the entry with an `actualSummary` and changes the status.
+
+A naive approach -- `actualSummary || plannedSummary || "Kein Eintrag"` -- has two problems:
+
+1. **"Planned but not taught" entries mislead the LLM.** A lesson with status `planned` was approved but never (or not yet) taught. Including it alongside completed lessons makes the LLM think the content was already covered.
+2. **Vague summaries waste context tokens.** Teachers frequently write things like "Alles wie geplant" or "Erledigt" as their `actualSummary`. This tells the LLM nothing about what was actually covered, even though the full lesson plan -- with topic, objectives, and timeline phases -- is available via the `lessonPlanId` foreign key.
+
+#### Status-Based Routing
+
+Each diary entry's `progressStatus` determines how it is included in the context:
+
+| `progressStatus` | Context section | Formatting strategy |
+| --- | --- | --- |
+| `planned` | **Geplante Stunden (noch nicht durchgeführt)** -- separate section, max 3 entries | Show topic/objectives/phases from linked plan (or `plannedSummary` fallback). Clearly marked `[Geplant]` so the LLM knows this is upcoming, not past. |
+| `completed` | **Letzte Stunden (Klassentagebuch)** -- main section, max 10 entries | If `actualSummary` is substantive: use it directly. If vague or missing: fall back to linked plan data, framed as "Durchgeführt wie geplant: ...". |
+| `partial` | **Letzte Stunden** | Always include plan summary as baseline. If `actualSummary` is substantive, append it as "Tatsächlich: ..." to show what was and wasn't covered. |
+| `deviated` | **Letzte Stunden** | Always show both the planned topic and the `actualSummary`, since the deviation information is critical for the LLM to avoid repeating or building on incorrect assumptions. |
+
+#### Vagueness Detection (`isVagueSummary`)
+
+A summary is considered vague (and therefore replaced by plan data) when any of the following is true:
+
+- **Null, empty, or whitespace-only** -- the teacher didn't fill anything in
+- **Very short (< 30 characters)** -- too brief to carry meaningful information (e.g. "Erledigt", "Wie geplant", "OK")
+- **Matches a known low-information pattern** (case-insensitive):
+  - "wie geplant", "alles wie geplant", "alles erledigt"
+  - "s.o.", "siehe plan", "wie besprochen", "wie vorbereitet"
+  - "erledigt", "ok", "passt", "gut gelaufen", "lief gut"
+  - "nichts besonderes", "durchgeführt", "gemacht"
+
+The 30-character threshold is intentionally aggressive: at that length, even a real summary (e.g. "Gedichtanalyse abgeschlossen") carries less information than the structured plan data it would be replaced with.
+
+#### Lesson Plan Fallback (`buildPlanSummary`)
+
+When an entry is taught but vague, and a linked `lessonPlanId` exists, the system builds a synthetic summary from the plan's structured JSONB fields:
+
+```
+Thema: {topic}. Ziele: {objective1}, {objective2}, {objective3}. Phasen: {phase1}, {phase2}, {phase3}.
+```
+
+- **topic**: the plan's `topic` field (always present)
+- **objectives**: the `text` field from each entry in the `objectives` JSONB array, capped at 3
+- **phases**: the `phase` field (name only, not description) from each entry in the `timeline` JSONB array
+
+If no linked plan exists, the system falls back to `plannedSummary` (the auto-generated text from approval time), then to "Kein Eintrag".
+
+#### Example Context Output
+
+**Taught entries (main section):**
+
+```
+## Letzte Stunden (Klassentagebuch)
+
+- 2026-02-24: [Abgeschlossen] Durchgeführt wie geplant: Thema: Kurzgeschichten analysieren. Ziele: Erzählperspektiven erkennen, Spannungsbogen identifizieren. Phasen: Einstieg, Textarbeit, Sicherung.
+- 2026-02-21: [Abgeschlossen] Eigene Analyse verfasst, gute Ergebnisse bei Gruppenarbeit. – Notiz: Differenzierung für leistungsstarke SuS hat gut funktioniert.
+- 2026-02-19: [Teilweise] Thema: Lyrik der Romantik. Ziele: Stilmittel erkennen, Epochenmerkmale zuordnen. Phasen: Einstieg, Textarbeit, Sicherung. Tatsächlich: Nur Einstieg und erste Textarbeit geschafft, Sicherung auf nächste Stunde verschoben.
+- 2026-02-17: [Abgewichen] Geplant: Gedichtvergleich. Tatsächlich: Spontan auf aktuelle Nachrichtenlage reagiert, Sachtextanalyse eingeschoben.
+```
+
+In this example:
+- Entry 02-24 had a vague `actualSummary` ("Alles wie geplant") -- replaced with plan data
+- Entry 02-21 had a substantive `actualSummary` -- used directly
+- Entry 02-19 is `partial` -- plan summary as baseline, actual note appended
+- Entry 02-17 is `deviated` -- both planned topic and actual deviation shown
+
+**Planned entries (separate section):**
+
+```
+## Geplante Stunden (noch nicht durchgeführt)
+
+- 2026-02-28: [Geplant] Thema: Gedichtvergleich. Ziele: Vergleichendes Analysieren, Epochenbezüge herstellen. Phasen: Wiederholung, Vergleichsarbeit, Ergebnissicherung.
+```
+
+#### Implementation Reference
+
+The canonical implementation lives in `src/lib/ai/context.ts`:
+
+- `isVagueSummary(text)` -- vagueness detection heuristic
+- `buildPlanSummary(plan)` -- structured plan-to-text conversion
+- `formatTaughtEntry(diary, plan)` -- status-aware formatting for completed/partial/deviated entries
+- `formatPlannedEntry(diary, plan)` -- formatting for not-yet-taught entries
+- `assembleContext(classGroupId, selectedTopicId?)` -- top-level orchestrator that queries diary entries with a LEFT JOIN on `lesson_plans` and assembles the full context string
 
 ### 6.4 Context Window Management
 
