@@ -78,8 +78,9 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
 
   const result = streamText({
     model: getModel("fast"),
-    system: `${planRefinementSystemPrompt}\n\n${planContext}`,
+    system: systemPrompt,
     messages: await convertToModelMessages(messages),
+    onFinish,
     tools: {
       update_plan_field: {
         description:
