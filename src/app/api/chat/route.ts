@@ -3,7 +3,10 @@ import { z } from "zod";
 import { getModel } from "@/lib/ai";
 import { planRefinementSystemPrompt } from "@/lib/ai/prompts/plan-refinement";
 import { updateLessonPlan, getLessonPlan } from "@/lib/actions/lesson-plans";
+import { createTracedOnFinish } from "@/lib/ai/trace";
 import type { LessonPlanOutput, TimelinePhase, Objective, Material } from "@/lib/ai/schemas";
+
+const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function POST(request: Request) {
   const { messages, lessonPlanId } = await request.json();
@@ -37,9 +40,22 @@ ${(currentPlan.materials as Material[]).map((m, i) => `${i}. ${m.title} (${m.typ
 
 Hausaufgaben: ${currentPlan.homework || "Keine"}`;
 
+  const systemPrompt = `${planRefinementSystemPrompt}\n\n${planContext}`;
+  const startTime = Date.now();
+
+  const onFinish = createTracedOnFinish(
+    {
+      agentMode: "plan_refinement",
+      teacherId: HARDCODED_TEACHER_ID,
+      classGroupId: currentPlan.classGroupId,
+      lessonPlanId,
+    },
+    { systemPrompt, messages, startTime },
+  );
+
   const result = streamText({
     model: getModel("fast"),
-    system: `${planRefinementSystemPrompt}\n\n${planContext}`,
+    system: systemPrompt,
     messages,
     tools: {
       update_plan_field: tool({
@@ -190,6 +206,7 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
       }),
     },
     maxSteps: 5,
+    onFinish,
   });
 
   return result.toDataStreamResponse();

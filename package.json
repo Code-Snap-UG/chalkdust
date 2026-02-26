@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "view-db": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/chalkdust npx drizzle-kit studio"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.47",

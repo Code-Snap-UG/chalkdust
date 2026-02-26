@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateObject } from "ai";
 import { getModel } from "@/lib/ai";
-import { lessonPlanSchema } from "@/lib/ai/schemas";
+import { lessonPlanSchema, type LessonPlanOutput } from "@/lib/ai/schemas";
 import { planGenerationSystemPrompt } from "@/lib/ai/prompts/plan-generation";
 import { assembleContext } from "@/lib/ai/context";
 import { saveLessonPlan } from "@/lib/actions/lesson-plans";
+import { tracedGenerateObject } from "@/lib/ai/trace";
+
+const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,29 +42,55 @@ export async function POST(request: NextRequest) {
       .join("\n");
 
     const fullPrompt = [context, teacherInput].filter(Boolean).join("\n\n---\n\n");
+    const userPrompt = `Erstelle einen Unterrichtsplan basierend auf folgendem Kontext:\n\n${fullPrompt}`;
 
-    const { object: plan } = await generateObject({
-      model: getModel("high"),
-      schema: lessonPlanSchema,
-      system: planGenerationSystemPrompt,
-      prompt: `Erstelle einen Unterrichtsplan basierend auf folgendem Kontext:\n\n${fullPrompt}`,
-    });
+    const traceGroupId = crypto.randomUUID();
+    const inputParams = {
+      topicId,
+      topicFreeText,
+      durationMinutes,
+      lessonDate,
+      learningGoals,
+      additionalNotes,
+    };
+    const traceMeta = {
+      agentMode: "plan_generation" as const,
+      teacherId: HARDCODED_TEACHER_ID,
+      classGroupId,
+      traceGroupId,
+      inputParams,
+      assembledContext: context,
+    };
 
-    // Quality guardrail: check duration sum
+    const { object: plan } = await tracedGenerateObject<LessonPlanOutput>(
+      {
+        model: getModel("high"),
+        schema: lessonPlanSchema,
+        system: planGenerationSystemPrompt,
+        prompt: userPrompt,
+      },
+      traceMeta,
+    );
+
+    const targetDuration = durationMinutes || 45;
     const totalDuration = plan.timeline.reduce(
       (sum, phase) => sum + phase.durationMinutes,
       0
     );
-    const targetDuration = durationMinutes || 45;
 
     if (Math.abs(totalDuration - targetDuration) > 2) {
-      // Retry once with explicit duration hint
-      const { object: retryPlan } = await generateObject({
-        model: getModel("high"),
-        schema: lessonPlanSchema,
-        system: planGenerationSystemPrompt,
-        prompt: `Erstelle einen Unterrichtsplan basierend auf folgendem Kontext:\n\n${fullPrompt}\n\nWICHTIG: Die Summe aller Phasendauern muss exakt ${targetDuration} Minuten ergeben.`,
-      });
+      const retryPrompt = `${userPrompt}\n\nWICHTIG: Die Summe aller Phasendauern muss exakt ${targetDuration} Minuten ergeben.`;
+
+      const { object: retryPlan } = await tracedGenerateObject<LessonPlanOutput>(
+        {
+          model: getModel("high"),
+          schema: lessonPlanSchema,
+          system: planGenerationSystemPrompt,
+          prompt: retryPrompt,
+        },
+        { ...traceMeta, inputParams: { ...inputParams, isRetry: true } },
+      );
+
       const saved = await saveLessonPlan(
         classGroupId,
         retryPlan,
