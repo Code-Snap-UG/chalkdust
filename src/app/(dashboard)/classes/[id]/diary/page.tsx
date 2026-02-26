@@ -1,0 +1,330 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Save,
+  Upload,
+  Loader2,
+  Paperclip,
+} from "lucide-react";
+
+type DiaryEntry = {
+  id: string;
+  entryDate: string;
+  plannedSummary: string | null;
+  actualSummary: string | null;
+  teacherNotes: string | null;
+  progressStatus: string;
+  lessonPlanId: string | null;
+};
+
+type MaterialItem = {
+  id: string;
+  title: string;
+  type: string;
+  source: string;
+  fileUrl: string | null;
+};
+
+const statusLabels: Record<string, string> = {
+  planned: "Geplant",
+  completed: "Abgeschlossen",
+  partial: "Teilweise",
+  deviated: "Abgewichen",
+};
+
+const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  planned: "secondary",
+  completed: "default",
+  partial: "outline",
+  deviated: "destructive",
+};
+
+export default function DiaryPage() {
+  const params = useParams();
+  const classGroupId = params.id as string;
+
+  const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<
+    Record<string, { actualSummary: string; teacherNotes: string; progressStatus: string }>
+  >({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [entryMaterials, setEntryMaterials] = useState<
+    Record<string, MaterialItem[]>
+  >({});
+
+  const loadEntries = useCallback(async () => {
+    const res = await fetch(`/api/classes/${classGroupId}/diary`);
+    if (res.ok) {
+      const data = await res.json();
+      setEntries(data.entries || []);
+    }
+  }, [classGroupId]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
+
+  async function loadMaterials(entryId: string) {
+    const res = await fetch(`/api/diary/${entryId}/materials`);
+    if (res.ok) {
+      const data = await res.json();
+      setEntryMaterials((prev) => ({ ...prev, [entryId]: data.materials || [] }));
+    }
+  }
+
+  function toggleExpand(entryId: string) {
+    if (expandedId === entryId) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(entryId);
+      const entry = entries.find((e) => e.id === entryId);
+      if (entry) {
+        setEditState((prev) => ({
+          ...prev,
+          [entryId]: {
+            actualSummary: entry.actualSummary || "",
+            teacherNotes: entry.teacherNotes || "",
+            progressStatus: entry.progressStatus,
+          },
+        }));
+        loadMaterials(entryId);
+      }
+    }
+  }
+
+  async function saveEntry(entryId: string) {
+    const state = editState[entryId];
+    if (!state) return;
+
+    setSaving(entryId);
+    try {
+      await fetch(`/api/diary/${entryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+      });
+      await loadEntries();
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function handleFileUpload(
+    entryId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(entryId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("diaryEntryId", entryId);
+      formData.append("title", file.name);
+
+      await fetch("/api/materials/upload", { method: "POST", body: formData });
+      await loadMaterials(entryId);
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-xl font-bold tracking-tight">Klassentagebuch</h2>
+        <p className="text-muted-foreground">
+          {entries.length} Einträge &middot; Klicke auf einen Eintrag, um ihn zu
+          bearbeiten.
+        </p>
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
+          <FileText className="size-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Noch keine Tagebucheinträge. Erstelle und gib einen Unterrichtsplan
+            frei, um automatisch einen Eintrag zu erzeugen.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {entries.map((entry) => (
+            <Card key={entry.id}>
+              <CardHeader
+                className="cursor-pointer pb-3"
+                onClick={() => toggleExpand(entry.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-sm font-medium">
+                      {new Date(entry.entryDate).toLocaleDateString("de-DE", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </CardTitle>
+                    <Badge variant={statusVariant[entry.progressStatus] || "secondary"}>
+                      {statusLabels[entry.progressStatus] ||
+                        entry.progressStatus}
+                    </Badge>
+                  </div>
+                  {expandedId === entry.id ? (
+                    <ChevronUp className="size-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  )}
+                </div>
+                {entry.plannedSummary && (
+                  <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                    {entry.plannedSummary}
+                  </p>
+                )}
+              </CardHeader>
+
+              {expandedId === entry.id && (
+                <CardContent className="flex flex-col gap-3 border-t pt-3">
+                  {entry.plannedSummary && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Geplant
+                      </p>
+                      <p className="text-sm">{entry.plannedSummary}</p>
+                    </div>
+                  )}
+
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium">
+                      Was wurde tatsächlich gemacht?
+                    </label>
+                    <textarea
+                      value={editState[entry.id]?.actualSummary || ""}
+                      onChange={(e) =>
+                        setEditState((prev) => ({
+                          ...prev,
+                          [entry.id]: {
+                            ...prev[entry.id],
+                            actualSummary: e.target.value,
+                          },
+                        }))
+                      }
+                      className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+                      placeholder="Beschreibe, was tatsächlich in der Stunde passiert ist..."
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium">Notizen</label>
+                    <textarea
+                      value={editState[entry.id]?.teacherNotes || ""}
+                      onChange={(e) =>
+                        setEditState((prev) => ({
+                          ...prev,
+                          [entry.id]: {
+                            ...prev[entry.id],
+                            teacherNotes: e.target.value,
+                          },
+                        }))
+                      }
+                      className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+                      placeholder="Persönliche Notizen, Beobachtungen..."
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium">Status</label>
+                    <select
+                      value={editState[entry.id]?.progressStatus || "planned"}
+                      onChange={(e) =>
+                        setEditState((prev) => ({
+                          ...prev,
+                          [entry.id]: {
+                            ...prev[entry.id],
+                            progressStatus: e.target.value,
+                          },
+                        }))
+                      }
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    >
+                      <option value="planned">Geplant</option>
+                      <option value="completed">Abgeschlossen</option>
+                      <option value="partial">Teilweise erledigt</option>
+                      <option value="deviated">Abgewichen</option>
+                    </select>
+                  </div>
+
+                  {/* Materials */}
+                  <div>
+                    <p className="text-xs font-medium mb-2">
+                      Angehängte Materialien
+                    </p>
+                    {(entryMaterials[entry.id] || []).map((mat) => (
+                      <div
+                        key={mat.id}
+                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm mb-1"
+                      >
+                        <Paperclip className="size-3 text-muted-foreground" />
+                        <span>{mat.title}</span>
+                        <Badge variant="secondary" className="text-xs ml-auto">
+                          {mat.type}
+                        </Badge>
+                      </div>
+                    ))}
+                    <label className="mt-1 inline-flex cursor-pointer items-center gap-2">
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(entry.id, e)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        disabled={uploading === entry.id}
+                      >
+                        <span>
+                          {uploading === entry.id ? (
+                            <Loader2 className="mr-1 size-3 animate-spin" />
+                          ) : (
+                            <Upload className="mr-1 size-3" />
+                          )}
+                          Material hochladen
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+
+                  <Button
+                    onClick={() => saveEntry(entry.id)}
+                    disabled={saving === entry.id}
+                    size="sm"
+                    className="w-fit"
+                  >
+                    {saving === entry.id ? (
+                      <Loader2 className="mr-1 size-3 animate-spin" />
+                    ) : (
+                      <Save className="mr-1 size-3" />
+                    )}
+                    Speichern
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
