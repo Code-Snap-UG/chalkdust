@@ -7,6 +7,7 @@ import {
   timestamp,
   jsonb,
   uuid,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -192,6 +193,42 @@ export const materialsRelations = relations(materials, ({ one }) => ({
   }),
 }));
 
+// Lesson Snippets
+
+export const lessonSnippets = pgTable("lesson_snippets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teacherId: uuid("teacher_id")
+    .references(() => teachers.id)
+    .notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  phase: varchar("phase", { length: 100 }).notNull(),
+  durationMinutes: integer("duration_minutes"),
+  description: text("description").notNull(),
+  method: varchar("method", { length: 255 }),
+  tags: jsonb("tags").notNull().default([]),
+  notes: text("notes"),
+  sourceLessonPlanId: uuid("source_lesson_plan_id").references(
+    () => lessonPlans.id,
+    { onDelete: "set null" }
+  ),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const snippetClassFavorites = pgTable(
+  "snippet_class_favorites",
+  {
+    snippetId: uuid("snippet_id")
+      .references(() => lessonSnippets.id, { onDelete: "cascade" })
+      .notNull(),
+    classGroupId: uuid("class_group_id")
+      .references(() => classGroups.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.snippetId, t.classGroupId] })]
+);
+
 // AI Trace Observability
 
 export const aiTraces = pgTable("ai_traces", {
@@ -242,3 +279,32 @@ export const aiTracesRelations = relations(aiTraces, ({ one }) => ({
     references: [classGroups.id],
   }),
 }));
+
+export const lessonSnippetsRelations = relations(
+  lessonSnippets,
+  ({ one, many }) => ({
+    teacher: one(teachers, {
+      fields: [lessonSnippets.teacherId],
+      references: [teachers.id],
+    }),
+    sourceLessonPlan: one(lessonPlans, {
+      fields: [lessonSnippets.sourceLessonPlanId],
+      references: [lessonPlans.id],
+    }),
+    classFavorites: many(snippetClassFavorites),
+  })
+);
+
+export const snippetClassFavoritesRelations = relations(
+  snippetClassFavorites,
+  ({ one }) => ({
+    snippet: one(lessonSnippets, {
+      fields: [snippetClassFavorites.snippetId],
+      references: [lessonSnippets.id],
+    }),
+    classGroup: one(classGroups, {
+      fields: [snippetClassFavorites.classGroupId],
+      references: [classGroups.id],
+    }),
+  })
+);

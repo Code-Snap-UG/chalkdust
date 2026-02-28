@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { LessonPlanOutput } from "@/lib/ai/schemas";
 import type { lessonPlans } from "@/lib/db/schema";
+import { SaveSnippetDialog } from "@/components/snippets/save-snippet-dialog";
 
 type PlanRecord = typeof lessonPlans.$inferSelect;
 
@@ -190,6 +191,10 @@ export function LessonPlanDetailClient({
                       <span className="text-sm text-muted-foreground">
                         {phase.durationMinutes} Min.
                       </span>
+                      <SaveSnippetDialog
+                        phase={phase}
+                        lessonPlanId={initialPlan.id}
+                      />
                     </div>
                   </div>
                   <p className="mt-1.5 text-sm text-muted-foreground">

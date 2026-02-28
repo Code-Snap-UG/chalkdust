@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bookmark,
   BookOpen,
   Calendar,
   GraduationCap,
@@ -51,6 +52,11 @@ const navItems = [
     label: "Unterrichtspläne",
     href: "/lesson-plans",
     icon: BookOpen,
+  },
+  {
+    label: "Bausteine",
+    href: "/snippets",
+    icon: Bookmark,
   },
   {
     label: "Kalender",
