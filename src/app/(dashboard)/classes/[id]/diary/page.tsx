@@ -53,6 +53,7 @@ export default function DiaryPage() {
   const classGroupId = params.id as string;
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [isArchived, setIsArchived] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editState, setEditState] = useState<
     Record<string, { actualSummary: string; teacherNotes: string; progressStatus: string }>
@@ -68,6 +69,7 @@ export default function DiaryPage() {
     if (res.ok) {
       const data = await res.json();
       setEntries(data.entries || []);
+      setIsArchived(data.isArchived ?? false);
     }
   }, [classGroupId]);
 
@@ -146,8 +148,10 @@ export default function DiaryPage() {
       <div>
         <h2 className="text-xl font-bold tracking-tight">Klassentagebuch</h2>
         <p className="text-muted-foreground">
-          {entries.length} Einträge &middot; Klicke auf einen Eintrag, um ihn zu
-          bearbeiten.
+          {entries.length} Einträge
+          {isArchived
+            ? " \u00b7 Archivierte Klasse \u2013 nur Lesezugriff"
+            : " \u00b7 Klicke auf einen Eintrag, um ihn zu bearbeiten."}
         </p>
       </div>
 
@@ -205,120 +209,164 @@ export default function DiaryPage() {
                     </div>
                   )}
 
-                  <div className="grid gap-1.5">
-                    <label className="text-xs font-medium">
-                      Was wurde tatsächlich gemacht?
-                    </label>
-                    <textarea
-                      value={editState[entry.id]?.actualSummary || ""}
-                      onChange={(e) =>
-                        setEditState((prev) => ({
-                          ...prev,
-                          [entry.id]: {
-                            ...prev[entry.id],
-                            actualSummary: e.target.value,
-                          },
-                        }))
-                      }
-                      className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
-                      placeholder="Beschreibe, was tatsächlich in der Stunde passiert ist..."
-                    />
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    <label className="text-xs font-medium">Notizen</label>
-                    <textarea
-                      value={editState[entry.id]?.teacherNotes || ""}
-                      onChange={(e) =>
-                        setEditState((prev) => ({
-                          ...prev,
-                          [entry.id]: {
-                            ...prev[entry.id],
-                            teacherNotes: e.target.value,
-                          },
-                        }))
-                      }
-                      className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
-                      placeholder="Persönliche Notizen, Beobachtungen..."
-                    />
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    <label className="text-xs font-medium">Status</label>
-                    <select
-                      value={editState[entry.id]?.progressStatus || "planned"}
-                      onChange={(e) =>
-                        setEditState((prev) => ({
-                          ...prev,
-                          [entry.id]: {
-                            ...prev[entry.id],
-                            progressStatus: e.target.value,
-                          },
-                        }))
-                      }
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                    >
-                      <option value="planned">Geplant</option>
-                      <option value="completed">Abgeschlossen</option>
-                      <option value="partial">Teilweise erledigt</option>
-                      <option value="deviated">Abgewichen</option>
-                    </select>
-                  </div>
-
-                  {/* Materials */}
-                  <div>
-                    <p className="text-xs font-medium mb-2">
-                      Angehängte Materialien
-                    </p>
-                    {(entryMaterials[entry.id] || []).map((mat) => (
-                      <div
-                        key={mat.id}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm mb-1"
-                      >
-                        <Paperclip className="size-3 text-muted-foreground" />
-                        <span>{mat.title}</span>
-                        <Badge variant="secondary" className="text-xs ml-auto">
-                          {mat.type}
-                        </Badge>
+                  {isArchived ? (
+                    // Read-only view for archived classes
+                    <>
+                      {entry.actualSummary && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Durchgeführt
+                          </p>
+                          <p className="text-sm">{entry.actualSummary}</p>
+                        </div>
+                      )}
+                      {entry.teacherNotes && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Notizen
+                          </p>
+                          <p className="text-sm">{entry.teacherNotes}</p>
+                        </div>
+                      )}
+                      {(entryMaterials[entry.id] || []).length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-2">
+                            Angehängte Materialien
+                          </p>
+                          {(entryMaterials[entry.id] || []).map((mat) => (
+                            <div
+                              key={mat.id}
+                              className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm mb-1"
+                            >
+                              <Paperclip className="size-3 text-muted-foreground" />
+                              <span>{mat.title}</span>
+                              <Badge variant="secondary" className="text-xs ml-auto">
+                                {mat.type}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Editable view for active classes
+                    <>
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium">
+                          Was wurde tatsächlich gemacht?
+                        </label>
+                        <textarea
+                          value={editState[entry.id]?.actualSummary || ""}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              [entry.id]: {
+                                ...prev[entry.id],
+                                actualSummary: e.target.value,
+                              },
+                            }))
+                          }
+                          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+                          placeholder="Beschreibe, was tatsächlich in der Stunde passiert ist..."
+                        />
                       </div>
-                    ))}
-                    <label className="mt-1 inline-flex cursor-pointer items-center gap-2">
-                      <input
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(entry.id, e)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        disabled={uploading === entry.id}
-                      >
-                        <span>
-                          {uploading === entry.id ? (
-                            <Loader2 className="mr-1 size-3 animate-spin" />
-                          ) : (
-                            <Upload className="mr-1 size-3" />
-                          )}
-                          Material hochladen
-                        </span>
-                      </Button>
-                    </label>
-                  </div>
 
-                  <Button
-                    onClick={() => saveEntry(entry.id)}
-                    disabled={saving === entry.id}
-                    size="sm"
-                    className="w-fit"
-                  >
-                    {saving === entry.id ? (
-                      <Loader2 className="mr-1 size-3 animate-spin" />
-                    ) : (
-                      <Save className="mr-1 size-3" />
-                    )}
-                    Speichern
-                  </Button>
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium">Notizen</label>
+                        <textarea
+                          value={editState[entry.id]?.teacherNotes || ""}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              [entry.id]: {
+                                ...prev[entry.id],
+                                teacherNotes: e.target.value,
+                              },
+                            }))
+                          }
+                          className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+                          placeholder="Persönliche Notizen, Beobachtungen..."
+                        />
+                      </div>
+
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium">Status</label>
+                        <select
+                          value={editState[entry.id]?.progressStatus || "planned"}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              [entry.id]: {
+                                ...prev[entry.id],
+                                progressStatus: e.target.value,
+                              },
+                            }))
+                          }
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                        >
+                          <option value="planned">Geplant</option>
+                          <option value="completed">Abgeschlossen</option>
+                          <option value="partial">Teilweise erledigt</option>
+                          <option value="deviated">Abgewichen</option>
+                        </select>
+                      </div>
+
+                      {/* Materials */}
+                      <div>
+                        <p className="text-xs font-medium mb-2">
+                          Angehängte Materialien
+                        </p>
+                        {(entryMaterials[entry.id] || []).map((mat) => (
+                          <div
+                            key={mat.id}
+                            className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm mb-1"
+                          >
+                            <Paperclip className="size-3 text-muted-foreground" />
+                            <span>{mat.title}</span>
+                            <Badge variant="secondary" className="text-xs ml-auto">
+                              {mat.type}
+                            </Badge>
+                          </div>
+                        ))}
+                        <label className="mt-1 inline-flex cursor-pointer items-center gap-2">
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => handleFileUpload(entry.id, e)}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            disabled={uploading === entry.id}
+                          >
+                            <span>
+                              {uploading === entry.id ? (
+                                <Loader2 className="mr-1 size-3 animate-spin" />
+                              ) : (
+                                <Upload className="mr-1 size-3" />
+                              )}
+                              Material hochladen
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+
+                      <Button
+                        onClick={() => saveEntry(entry.id)}
+                        disabled={saving === entry.id}
+                        size="sm"
+                        className="w-fit"
+                      >
+                        {saving === entry.id ? (
+                          <Loader2 className="mr-1 size-3 animate-spin" />
+                        ) : (
+                          <Save className="mr-1 size-3" />
+                        )}
+                        Speichern
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               )}
             </Card>

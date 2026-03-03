@@ -1,14 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { classGroups } from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { saveCurriculum } from "@/lib/actions/curriculum";
 
 const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status") ?? "active";
+
+    const rows = await db
+      .select()
+      .from(classGroups)
+      .where(eq(classGroups.status, status))
+      .orderBy(desc(classGroups.createdAt));
+
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Get classes error:", error);
+    return NextResponse.json(
+      { error: "Fehler beim Laden der Klassen." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, grade, subject, schoolYear, curriculum } = body;
+    const { name, grade, subject, schoolYear, predecessorId, curriculum } =
+      body;
 
     if (!name || !grade || !subject || !schoolYear) {
       return NextResponse.json(
@@ -25,6 +48,7 @@ export async function POST(request: NextRequest) {
         grade,
         subject,
         schoolYear,
+        predecessorId: predecessorId ?? undefined,
       })
       .returning();
 

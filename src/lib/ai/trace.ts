@@ -7,7 +7,11 @@ import {
 import { db } from "@/lib/db";
 import { aiTraces } from "@/lib/db/schema";
 
-type AgentMode = "plan_generation" | "plan_refinement" | "curriculum_extraction";
+type AgentMode =
+  | "plan_generation"
+  | "plan_refinement"
+  | "curriculum_extraction"
+  | "transition_summary";
 
 export interface TraceMetadata {
   agentMode: AgentMode;

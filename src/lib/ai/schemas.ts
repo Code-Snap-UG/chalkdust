@@ -84,3 +84,23 @@ export type Differentiation = z.infer<typeof differentiationSchema>;
 export type CurriculumTopicExtraction = z.infer<
   typeof curriculumTopicExtractionSchema
 >;
+
+export const transitionSummarySchema = z.object({
+  summary: z
+    .string()
+    .describe(
+      "Ganzheitliche Jahresrückschau: behandelte Themen, Klassenentwicklung, bewährte Unterrichtsformen"
+    ),
+  strengths: z
+    .string()
+    .describe(
+      "Bereiche, in denen die Klasse besonders gut vorangekommen ist – inhaltlich, methodisch oder in der Lernhaltung"
+    ),
+  weaknesses: z
+    .string()
+    .describe(
+      "Bereiche, die im neuen Schuljahr besondere Aufmerksamkeit erfordern – Wissenslücken, Methodenschwierigkeiten, nicht ausreichend vertiefte Themen"
+    ),
+});
+
+export type TransitionSummaryOutput = z.infer<typeof transitionSummarySchema>;

@@ -25,7 +25,10 @@ export async function getClassGroup(id: string) {
   return rows[0] ?? null;
 }
 
-export async function createClassGroup(formData: FormData) {
+export async function createClassGroup(
+  formData: FormData,
+  predecessorId?: string
+) {
   const name = formData.get("name") as string;
   const grade = formData.get("grade") as string;
   const subject = formData.get("subject") as string;
@@ -39,6 +42,7 @@ export async function createClassGroup(formData: FormData) {
       grade,
       subject,
       schoolYear,
+      predecessorId: predecessorId ?? undefined,
     })
     .returning();
 
@@ -46,7 +50,45 @@ export async function createClassGroup(formData: FormData) {
   redirect(`/classes/${created.id}`);
 }
 
+export async function saveTransitionSummary(
+  classGroupId: string,
+  data: {
+    summary: string;
+    strengths: string;
+    weaknesses: string;
+  }
+) {
+  await db
+    .update(classGroups)
+    .set({
+      transitionSummary: data.summary,
+      transitionStrengths: data.strengths,
+      transitionWeaknesses: data.weaknesses,
+      updatedAt: new Date(),
+    })
+    .where(eq(classGroups.id, classGroupId));
+
+  revalidatePath(`/classes/${classGroupId}`);
+  revalidatePath("/classes");
+}
+
 export async function archiveClassGroup(id: string) {
+  const [classGroup] = await db
+    .select()
+    .from(classGroups)
+    .where(eq(classGroups.id, id))
+    .limit(1);
+
+  if (!classGroup) {
+    throw new Error("Klasse nicht gefunden.");
+  }
+
+  if (!classGroup.transitionSummary?.trim()) {
+    throw new Error(
+      "Die Übergangszusammenfassung muss gespeichert sein, bevor die Klasse archiviert werden kann."
+    );
+  }
+
   await db
     .update(classGroups)
     .set({ status: "archived", updatedAt: new Date() })

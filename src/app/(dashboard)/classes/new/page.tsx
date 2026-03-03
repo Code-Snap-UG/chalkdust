@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -23,6 +23,14 @@ import {
   GripVertical,
 } from "lucide-react";
 
+type ArchivedClass = {
+  id: string;
+  name: string;
+  subject: string;
+  grade: string;
+  schoolYear: string;
+};
+
 type ExtractedTopic = {
   title: string;
   description: string;
@@ -39,6 +47,17 @@ export default function NewClassWizard() {
   const [grade, setGrade] = useState("");
   const [subject, setSubject] = useState("");
   const [schoolYear, setSchoolYear] = useState("");
+  const [predecessorId, setPredecessorId] = useState("");
+  const [archivedClasses, setArchivedClasses] = useState<ArchivedClass[]>([]);
+
+  useEffect(() => {
+    fetch("/api/classes?status=archived")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setArchivedClasses(data);
+      })
+      .catch(() => {});
+  }, []);
 
   // Step 2 data
   const [fileName, setFileName] = useState("");
@@ -125,6 +144,7 @@ export default function NewClassWizard() {
           grade,
           subject,
           schoolYear,
+          predecessorId: predecessorId || undefined,
           curriculum: {
             subject,
             grade,
@@ -227,6 +247,34 @@ export default function NewClassWizard() {
                 required
               />
             </div>
+            {archivedClasses.length > 0 && (
+              <div className="grid gap-2">
+                <Label htmlFor="predecessorId">
+                  Vorjahresklasse verknüpfen{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <select
+                  id="predecessorId"
+                  value={predecessorId}
+                  onChange={(e) => setPredecessorId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Keine Verknüpfung</option>
+                  {archivedClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name} – {cls.subject}, Klasse {cls.grade} (
+                      {cls.schoolYear})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Die Übergangsdokumentation der Vorjahresklasse wird in die
+                  KI-Unterrichtsplanung eingebunden.
+                </p>
+              </div>
+            )}
             <Button
               onClick={() => setStep(2)}
               disabled={!name || !grade || !subject || !schoolYear}

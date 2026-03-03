@@ -85,11 +85,21 @@ export default function PlanLessonPage() {
   );
 
   useEffect(() => {
+    // Redirect to class overview if the class is archived
+    fetch(`/api/classes/${classGroupId}`)
+      .then((r) => r.json())
+      .then((data: { status?: string }) => {
+        if (data.status === "archived") {
+          router.replace(`/classes/${classGroupId}`);
+        }
+      })
+      .catch(() => {});
+
     fetch(`/api/classes/${classGroupId}/topics`)
       .then((r) => r.json())
       .then((data) => setCurriculumTopics(data.topics || []))
       .catch(() => {});
-  }, [classGroupId]);
+  }, [classGroupId, router]);
 
   const [chatInput, setChatInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);

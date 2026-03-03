@@ -18,6 +18,7 @@ import {
   Paperclip,
   MessageSquare,
 } from "lucide-react";
+import { CloseYearButton } from "./close-year-button";
 
 export default async function ClassDetailPage({
   params,
@@ -47,24 +48,38 @@ export default async function ClassDetailPage({
   );
   const topicsCovered = completedEntries.length;
 
+  const isArchived = classGroup.status === "archived";
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {classGroup.name} &ndash; {classGroup.subject}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {classGroup.name} &ndash; {classGroup.subject}
+            </h1>
+            {isArchived && (
+              <Badge variant="secondary" className="text-xs">
+                Archiviert
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Klasse {classGroup.grade} &middot; Schuljahr{" "}
             {classGroup.schoolYear}
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/classes/${id}/plan`}>
-            <Sparkles className="mr-2 size-4" />
-            Stunde planen
-          </Link>
-        </Button>
+        {!isArchived && (
+          <div className="flex items-center gap-2">
+            <CloseYearButton classGroupId={id} />
+            <Button asChild>
+              <Link href={`/classes/${id}/plan`}>
+                <Sparkles className="mr-2 size-4" />
+                Stunde planen
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Curriculum progress */}
@@ -149,21 +164,23 @@ export default async function ClassDetailPage({
 
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Link href={`/classes/${id}/plan`}>
-          <Card className="cursor-pointer transition-shadow hover:shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <Sparkles className="size-4 text-primary" />
-                Stunde planen
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Erstelle mit KI-Unterstützung einen neuen Unterrichtsplan.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        {!isArchived && (
+          <Link href={`/classes/${id}/plan`}>
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="size-4 text-primary" />
+                  Stunde planen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Erstelle mit KI-Unterstützung einen neuen Unterrichtsplan.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         <Link href={`/classes/${id}/diary`}>
           <Card className="cursor-pointer transition-shadow hover:shadow-md">
@@ -175,8 +192,7 @@ export default async function ClassDetailPage({
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                {diaryEntries.length} Einträge &middot; Letzte Stunden einsehen
-                und dokumentieren.
+                {diaryEntries.length} Einträge &middot; Letzte Stunden einsehen.
               </p>
             </CardContent>
           </Card>
@@ -199,6 +215,40 @@ export default async function ClassDetailPage({
           </Card>
         </Link>
       </div>
+
+      {/* Transition summary (archived classes only) */}
+      {isArchived &&
+        (classGroup.transitionSummary ||
+          classGroup.transitionStrengths ||
+          classGroup.transitionWeaknesses) && (
+          <div className="flex flex-col gap-4 rounded-xl border bg-muted/20 p-5">
+            <h3 className="font-semibold">Übergangsdokumentation</h3>
+            {classGroup.transitionSummary && (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Jahresrückschau
+                </p>
+                <p className="text-sm">{classGroup.transitionSummary}</p>
+              </div>
+            )}
+            {classGroup.transitionStrengths && (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Stärken
+                </p>
+                <p className="text-sm">{classGroup.transitionStrengths}</p>
+              </div>
+            )}
+            {classGroup.transitionWeaknesses && (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Förderbedarf
+                </p>
+                <p className="text-sm">{classGroup.transitionWeaknesses}</p>
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Upcoming planned lessons */}
       {plannedEntries.length > 0 && (
