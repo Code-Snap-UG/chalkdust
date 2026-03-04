@@ -127,3 +127,60 @@ export async function POST(
     );
   }
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: classGroupId } = await params;
+
+  try {
+    const { summary, strengths, weaknesses } = await req.json();
+
+    if (!summary?.trim() || !strengths?.trim() || !weaknesses?.trim()) {
+      return NextResponse.json(
+        { error: "Alle drei Felder müssen ausgefüllt sein." },
+        { status: 400 }
+      );
+    }
+
+    const [classGroup] = await db
+      .select()
+      .from(classGroups)
+      .where(eq(classGroups.id, classGroupId))
+      .limit(1);
+
+    if (!classGroup) {
+      return NextResponse.json(
+        { error: "Klasse nicht gefunden." },
+        { status: 404 }
+      );
+    }
+
+    if (classGroup.status !== "active") {
+      return NextResponse.json(
+        { error: "Diese Klasse ist bereits archiviert." },
+        { status: 400 }
+      );
+    }
+
+    await db
+      .update(classGroups)
+      .set({
+        transitionSummary: summary,
+        transitionStrengths: strengths,
+        transitionWeaknesses: weaknesses,
+        status: "archived",
+        updatedAt: new Date(),
+      })
+      .where(eq(classGroups.id, classGroupId));
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Transition archive error:", error);
+    return NextResponse.json(
+      { error: "Beim Archivieren ist ein Fehler aufgetreten." },
+      { status: 500 }
+    );
+  }
+}

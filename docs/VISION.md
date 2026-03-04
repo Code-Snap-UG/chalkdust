@@ -88,7 +88,7 @@ The `/classes/:id` page is the central hub for everything about a class. It answ
 
 Classes don't reset at the end of the school year — knowledge about them should carry over. The system supports a `predecessorId` link: when a teacher creates a new ClassGroup for the next school year, they can optionally link it to last year's class.
 
-At end-of-year, the teacher runs a **Close School Year** flow. The AI analyzes the full diary and generates a transition summary draft — overall assessment, documented strengths, documented weaknesses. The teacher reviews and edits it. The class is then archived (read-only but always accessible).
+At end-of-year, the teacher runs a **Close School Year** flow. Clicking "Schuljahr abschließen" navigates to a dedicated split-view page (`/classes/:id/transition`): the full class diary is visible and scrollable on the left, while the wizard runs on the right. The AI analyses the diary and generates a transition summary draft — overall assessment, documented strengths, documented weaknesses — while the teacher can already review diary entries on the left. The teacher edits the draft, confirms, and the class is archived (read-only but always accessible).
 
 When the new ClassGroup is created and linked to its predecessor, the transition summary flows into the AI context for lesson planning: *"This class struggled with fractions last year and never finished the geometry unit."* The AI uses this to shape the first lessons of the new year appropriately.
 
@@ -604,6 +604,7 @@ flowchart LR
         ClassCurriculum["/classes/:id/curriculum"]
         ClassDiary["/classes/:id/diary"]
         ClassPlan["/classes/:id/plan"]
+        ClassTransition["/classes/:id/transition"]
         ClassSettings["/classes/:id/settings"]
         ClassExam["/classes/:id/exam/new"]
     end
@@ -632,6 +633,7 @@ flowchart LR
     ClassDetail --> ClassCurriculum
     ClassDetail --> ClassDiary
     ClassDetail --> ClassPlan
+    ClassDetail --> ClassTransition
     ClassDetail --> ClassSettings
     ClassDetail --> ClassExam
     ClassPlan --> PlanDetail
@@ -781,9 +783,11 @@ Required before shared access and production deployment:
 
 ### Phase 6 — End-of-Year Transition (complete)
 - LLM-generated transition summary draft
-- Teacher review and edit UI
+- Split-view transition page: diary reference panel (left) + wizard (right)
+- Teacher review and edit UI with AI draft pre-fill and graceful manual fallback
+- Atomic save-and-archive via `PATCH /api/classes/[id]/transition`
 - Transition context injection into lesson planning for linked classes
-- Multi-year class history chain view
+- Successor class pre-fill (name, grade, school year bumped automatically)
 
 ### Phase 7 — Classroom Tools
 - Student first names list per class group (input UI in class settings)

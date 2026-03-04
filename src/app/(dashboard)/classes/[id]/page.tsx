@@ -72,10 +72,6 @@ export default async function ClassDetailPage({
         <div className="flex items-center gap-2">
           <CloseYearButton
             classGroupId={id}
-            name={classGroup.name}
-            grade={classGroup.grade}
-            subject={classGroup.subject}
-            schoolYear={classGroup.schoolYear}
             isArchived={isArchived}
           />
           {!isArchived && (
