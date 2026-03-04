@@ -46,15 +46,7 @@ export function TransitionDiaryPanel({ entries, className, label }: Props) {
 
   return (
     <div className={`flex h-full flex-col ${className ?? ""}`}>
-      <div className="shrink-0 pb-4">
-        <h2 className="text-base font-semibold">Klassentagebuch</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {label} &middot; {relevantEntries.length}{" "}
-          {relevantEntries.length === 1 ? "Eintrag" : "Einträge"} zum
-          Nachschlagen
-        </p>
-        <div className="mt-3 border-b" />
-      </div>
+      
 
       {relevantEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/20 p-10 text-center mt-4">
