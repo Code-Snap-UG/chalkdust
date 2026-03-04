@@ -24,7 +24,7 @@ export default async function TransitionPage({
   const label = `${classGroup.name} – ${classGroup.subject}`;
 
   return (
-    <div className="-m-4 md:-m-6 flex flex-col overflow-hidden" style={{ height: "calc(100vh - 3.5rem)" }}>
+    <div className="-m-4 md:-m-6 flex flex-col overflow-hidden" style={{ height: "calc(100svh - 6.5rem)" }}>
       {/* Page header: back link + title + class metadata */}
       <div className="shrink-0 border-b px-6 py-4">
         <Link
@@ -46,7 +46,7 @@ export default async function TransitionPage({
       {/* Split view */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel: diary reference */}
-        <div className="flex-1 overflow-y-auto border-r p-6">
+        <div className="flex-1 overflow-hidden border-r p-6">
           <TransitionDiaryPanel
             entries={diaryEntries}
             label={label}

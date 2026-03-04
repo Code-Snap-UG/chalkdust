@@ -45,8 +45,8 @@ export function TransitionDiaryPanel({ entries, className, label }: Props) {
   );
 
   return (
-    <div className={className}>
-      <div className="sticky top-0 z-10 bg-background pb-4">
+    <div className={`flex h-full flex-col ${className ?? ""}`}>
+      <div className="shrink-0 pb-4">
         <h2 className="text-base font-semibold">Klassentagebuch</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
           {label} &middot; {relevantEntries.length}{" "}
@@ -64,7 +64,7 @@ export function TransitionDiaryPanel({ entries, className, label }: Props) {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 pt-4">
+        <div className="flex-1 space-y-3 overflow-y-auto pt-4">
           {relevantEntries.map((entry) => {
             const isExpanded = expandedId === entry.id;
             return (
