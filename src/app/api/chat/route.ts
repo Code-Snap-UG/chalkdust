@@ -2,13 +2,17 @@ import {
   streamText,
   convertToModelMessages,
   stepCountIs,
+  simulateReadableStream,
   type UIMessage,
 } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
+import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
 import { z } from "zod";
 import { getModel } from "@/lib/ai";
 import { planRefinementSystemPrompt } from "@/lib/ai/prompts/plan-refinement";
 import { updateLessonPlan, getLessonPlan } from "@/lib/actions/lesson-plans";
 import { createTracedOnFinish } from "@/lib/ai/trace";
+import { AI_MOCK_ENABLED, MOCK_CHAT_RESPONSE } from "@/lib/ai/mocks";
 import type {
   LessonPlanOutput,
   TimelinePhase,
@@ -75,6 +79,37 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
     },
     { systemPrompt, messages, startTime },
   );
+
+  if (AI_MOCK_ENABLED) {
+    const mockChunks: LanguageModelV3StreamPart[] = [
+      { type: "text-start", id: "mock-1" },
+      { type: "text-delta", id: "mock-1", delta: MOCK_CHAT_RESPONSE },
+      { type: "text-end", id: "mock-1" },
+      {
+        type: "finish",
+        finishReason: { unified: "stop" as const, raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 0,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 0, text: undefined, reasoning: undefined },
+        },
+      },
+    ];
+    const mockResult = streamText({
+      model: new MockLanguageModelV3({
+        doStream: async () => ({
+          stream: simulateReadableStream({ chunks: mockChunks }),
+        }),
+      }),
+      messages: [],
+      onFinish,
+    });
+    return mockResult.toUIMessageStreamResponse();
+  }
 
   const result = streamText({
     model: getModel("fast"),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -39,15 +39,16 @@ type ExtractedTopic = {
 
 export default function NewClassWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 1 data
-  const [name, setName] = useState("");
-  const [grade, setGrade] = useState("");
-  const [subject, setSubject] = useState("");
-  const [schoolYear, setSchoolYear] = useState("");
-  const [predecessorId, setPredecessorId] = useState("");
+  // Step 1 data — initialised from URL search params when navigating from the archive flow
+  const [name, setName] = useState(() => searchParams.get("name") ?? "");
+  const [grade, setGrade] = useState(() => searchParams.get("grade") ?? "");
+  const [subject, setSubject] = useState(() => searchParams.get("subject") ?? "");
+  const [schoolYear, setSchoolYear] = useState(() => searchParams.get("schoolYear") ?? "");
+  const [predecessorId, setPredecessorId] = useState(() => searchParams.get("predecessorId") ?? "");
   const [archivedClasses, setArchivedClasses] = useState<ArchivedClass[]>([]);
 
   useEffect(() => {

@@ -97,9 +97,10 @@ When the new ClassGroup is created and linked to its predecessor, the transition
 - Curriculum upload + AI extraction: **built**
 - Curriculum topic review UI: **built**
 - Class detail hub: **built**
-- Predecessor linking schema: **built** (field exists)
-- End-of-year transition flow: **not yet built**
-- Transition summary in AI context: **not yet built**
+- Predecessor linking schema: **built**
+- End-of-year transition flow: **built** — see [`docs/features/end-of-year-transition.md`](../features/end-of-year-transition.md)
+- Successor class pre-fill (name, grade, school year bumped automatically): **built**
+- Transition summary in AI context: **built**
 
 ---
 
@@ -192,7 +193,7 @@ This feedback loop is what makes Chalkdust more valuable over time. The AI is no
 - Diary auto-creation on plan approval: **built**
 - File upload to diary entries: **built**
 - AI observability traces: **built**
-- End-of-year transition context injection: **not yet built**
+- End-of-year transition context injection: **built**
 
 ---
 

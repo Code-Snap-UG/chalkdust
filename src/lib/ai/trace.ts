@@ -6,8 +6,9 @@ import {
 } from "ai";
 import { db } from "@/lib/db";
 import { aiTraces } from "@/lib/db/schema";
+import { AI_MOCK_ENABLED, getMockObject } from "./mocks";
 
-type AgentMode =
+export type AgentMode =
   | "plan_generation"
   | "plan_refinement"
   | "curriculum_extraction"
@@ -85,6 +86,28 @@ export async function tracedGenerateObject<RESULT>(
   generateOptions: Parameters<typeof generateObject>[0],
   traceMetadata: TraceMetadata,
 ): Promise<GenerateObjectResult<RESULT>> {
+  if (AI_MOCK_ENABLED) {
+    const object = getMockObject(traceMetadata.agentMode) as RESULT;
+    saveTrace({
+      ...traceMetadata,
+      provider: "mock",
+      modelId: "mock",
+      systemPrompt:
+        typeof generateOptions.system === "string"
+          ? generateOptions.system
+          : undefined,
+      userPrompt:
+        typeof generateOptions.prompt === "string"
+          ? generateOptions.prompt
+          : undefined,
+      output: object as unknown,
+      durationMs: 0,
+      finishReason: "stop",
+      status: "success",
+    }).catch(console.error);
+    return { object } as unknown as GenerateObjectResult<RESULT>;
+  }
+
   const start = Date.now();
   try {
     const result = await generateObject(generateOptions);

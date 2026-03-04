@@ -38,8 +38,8 @@ The following is an itemized audit based on implementation status fields in VISI
 | Curriculum topic review UI | Built | Teacher can edit, reorder, confirm extracted topics |
 | Class detail hub (`/classes/:id`) | Built | Progress bar, stats, lesson timeline, upcoming plans |
 | Predecessor linking schema | Built | `predecessorId` FK exists on `class_groups` |
-| End-of-year "Close School Year" flow | **NOT BUILT** | See gap below |
-| Transition summary in AI context | **NOT BUILT** | See gap below |
+| End-of-year "Close School Year" flow | Built | `CloseYearButton` dialog state machine; `POST /api/classes/[id]/transition` |
+| Transition summary in AI context | Built | Layer 7 in `src/lib/ai/context.ts` |
 
 #### AI Lesson Planning (Feature 2)
 
@@ -52,7 +52,7 @@ The following is an itemized audit based on implementation status fields in VISI
 | Diary auto-creation on plan approval | Built | `progressStatus: "planned"` entry created |
 | File upload to diary entries | Built | Materials with `source: "uploaded"` |
 | AI observability traces | Built | `ai_traces` table |
-| End-of-year transition context injection | **NOT BUILT** | Depends on gap below |
+| End-of-year transition context injection | Built | Predecessor summary injected in `assembleContext` |
 
 #### Snippets (Feature 3, partial)
 
@@ -69,92 +69,27 @@ The following is an itemized audit based on implementation status fields in VISI
 
 ---
 
-### Phase 0 Gap 1: End-of-Year Transition Flow
+### Phase 0 Gap 1: End-of-Year Transition Flow — BUILT
 
-#### What needs to be built
+**Status:** Complete. See [`docs/features/end-of-year-transition.md`](../features/end-of-year-transition.md) for the full architecture doc.
 
-This is the "Close School Year" feature. A teacher completes a school year, triggers an archive flow, the AI generates a transition summary draft, the teacher reviews and edits it, and the class is archived. When a new class is created and linked to the archived one, the transition summary feeds into future lesson planning context.
+#### What was built
 
-#### Database
-
-No new tables required. The following fields already exist on `class_groups`:
-
-```sql
-status               VARCHAR(20)  -- "active" | "archived"
-predecessor_id       UUID         -- FK → class_groups (self-referential)
-transition_summary   TEXT         -- overall summary (LLM-generated, teacher-editable)
-transition_strengths TEXT         -- areas where the class excelled
-transition_weaknesses TEXT        -- areas that need reinforcement
-```
-
-#### Server Actions / API
-
-New actions in `src/lib/actions/class-groups.ts` (or a new `src/lib/actions/transition.ts`):
-
-- `generateTransitionSummary(classGroupId)` — fetches all taught diary entries for the class, assembles them into a prompt, calls the LLM with `generateObject`, returns a structured draft with `summary`, `strengths`, `weaknesses` fields.
-- `saveTransitionSummary(classGroupId, { summary, strengths, weaknesses })` — saves the teacher-edited values back to the `class_groups` row.
-- `archiveClassGroup(classGroupId)` — sets `status: "archived"` after transition summary is saved. Should be idempotent and refuse if no transition summary exists.
-
-LLM configuration for transition summary generation:
-
-```
-Mode: generateObject
-Model: high-capability (synthesis of many diary entries)
-Schema: { summary: string, strengths: string, weaknesses: string }
-Context: all taught diary entries for the class year (with plan fallback for vague entries)
-System prompt: German-language, teacher-facing voice, analytical but constructive
-```
-
-#### UI Flow
-
-Entry point: a "Close School Year" button on the class detail page (`/classes/:id`), visible only when `status === "active"`.
-
-**Step 1 — Generate draft**: clicking triggers `generateTransitionSummary`. Show a loading state. The result renders in an editable three-section form: Summary, Strengths, Weaknesses.
-
-**Step 2 — Review and edit**: the teacher reads the AI draft and edits freely. No auto-save; the teacher must explicitly confirm.
-
-**Step 3 — Archive**: a "Archive this class" button at the bottom. Calls `saveTransitionSummary` then `archiveClassGroup`. Redirects to the class list with a success message. The archived class appears under a "Previous Years" section.
-
-**Archived class view**: read-only version of the class detail page. All diary entries, plans, curriculum, and the transition summary are visible but not editable. Add an "Archived" badge to the class header.
-
-#### Transition Context in Lesson Planning
-
-In `src/lib/ai/context.ts` (`assembleContext`), add:
-
-```typescript
-// Layer 7 — Predecessor Transition Summary (already defined, not yet implemented)
-if (classGroup.predecessorId) {
-  const predecessor = await db.query.classGroups.findFirst({
-    where: eq(classGroups.id, classGroup.predecessorId)
-  });
-  if (predecessor?.transitionSummary) {
-    contextParts.push(buildTransitionContext(predecessor));
-  }
-}
-```
-
-The `buildTransitionContext` function formats the predecessor data as:
-
-```
-## Vorklasse — Übergangsnotizen (${predecessor.name}, ${predecessor.schoolYear})
-${predecessor.transitionSummary}
-
-Stärken: ${predecessor.transitionStrengths}
-Schwächen: ${predecessor.transitionWeaknesses}
-```
-
-Token budget for this layer: ~500 tokens (as defined in the context window management spec).
+- **`CloseYearButton`** (`src/app/(dashboard)/classes/[id]/close-year-button.tsx`) — dialog-based state machine with six steps: `generating → editing → confirming → saving → done`. Gracefully degrades to an empty form if AI generation fails so the teacher can write manually.
+- **`POST /api/classes/[id]/transition`** — fetches all taught diary entries, falls back to plan summaries for vague entries, calls the high-capability model via `tracedGenerateObject`, returns `{ summary, strengths, weaknesses }`.
+- **`saveTransitionSummary` / `archiveClassGroup`** in `src/lib/actions/class-groups.ts` — saves transition fields and sets `status: "archived"`. Archive is guarded: refuses if `transitionSummary` is empty.
+- **Successor pre-fill** — the "done" screen computes bumped grade, name, and school year and navigates to `/classes/new?name=...&grade=...&schoolYear=...&predecessorId=...`. The new class wizard reads these params as initial state.
+- **Context injection** — layer 7 in `src/lib/ai/context.ts`: if `classGroup.predecessorId` is set, the predecessor's transition fields are appended as `## Vorjahr – Übergangsinformationen`.
 
 #### Acceptance Criteria
 
-- [ ] "Close School Year" button is visible on active class detail pages
-- [ ] Clicking it triggers LLM generation and shows a loading state
-- [ ] The draft populates a three-section editable form (Summary, Strengths, Weaknesses)
-- [ ] Teacher can edit all three fields freely
-- [ ] Confirming archives the class (status = "archived"), preserving all data read-only
-- [ ] Archived classes appear in a "Previous Years" section on the class list
-- [ ] When a new class has a `predecessorId` set, the transition summary is included in lesson planning context
-- [ ] The context injection does not break planning for classes without a predecessor
+- [x] "Close School Year" button is visible on active class detail pages
+- [x] Clicking it triggers LLM generation and shows a loading state
+- [x] The draft populates a three-section editable form (Jahresrückschau, Stärken, Förderbedarf)
+- [x] Teacher can edit all three fields freely
+- [x] Confirming archives the class (status = "archived"), preserving all data read-only
+- [x] When a new class has a `predecessorId` set, the transition summary is included in lesson planning context
+- [x] The context injection does not break planning for classes without a predecessor
 
 ---
 
@@ -172,8 +107,8 @@ These are not gaps to close in Phase 0. They are documented here so the constrai
 
 Phase 0 is complete when:
 
-- [ ] End-of-year transition flow works end-to-end (generate → review → archive)
-- [ ] Transition summary feeds into lesson planning context for linked classes
+- [x] End-of-year transition flow works end-to-end (generate → review → archive)
+- [x] Transition summary feeds into lesson planning context for linked classes
 - [ ] All existing features remain stable (no regressions)
 - [ ] Hardcoded teacher ID is isolated to a single, clearly labeled constant
 - [ ] No linter errors or TypeScript errors in the current codebase
@@ -542,14 +477,14 @@ At fast-model pricing, this is negligible per call. If a teacher has a very larg
 
 Phase 0 is complete when all of the following are true:
 
-- [ ] "Close School Year" button appears on all active class detail pages
-- [ ] Clicking it triggers LLM generation with a visible loading state
-- [ ] The AI-generated draft populates a three-section editable form
-- [ ] Teacher can edit Summary, Strengths, and Weaknesses fields freely
-- [ ] Confirming archives the class: status becomes "archived", all data becomes read-only
+- [x] "Close School Year" button appears on all active class detail pages
+- [x] Clicking it triggers LLM generation with a visible loading state
+- [x] The AI-generated draft populates a three-section editable form
+- [x] Teacher can edit Summary, Strengths, and Weaknesses fields freely
+- [x] Confirming archives the class: status becomes "archived", all data becomes read-only
 - [ ] Archived classes appear in a "Previous Years" section on the class list
-- [ ] When a new class has a `predecessorId`, the predecessor's transition fields are included in lesson planning context (verify via AI traces)
-- [ ] Planning for classes without a predecessor is unaffected (no regression)
+- [x] When a new class has a `predecessorId`, the predecessor's transition fields are included in lesson planning context (verify via AI traces)
+- [x] Planning for classes without a predecessor is unaffected (no regression)
 - [ ] Hardcoded teacher ID is isolated to a single, clearly labeled constant
 - [ ] No TypeScript errors or linter errors in the codebase
 

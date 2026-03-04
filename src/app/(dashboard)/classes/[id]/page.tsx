@@ -69,17 +69,24 @@ export default async function ClassDetailPage({
             {classGroup.schoolYear}
           </p>
         </div>
-        {!isArchived && (
-          <div className="flex items-center gap-2">
-            <CloseYearButton classGroupId={id} />
+        <div className="flex items-center gap-2">
+          <CloseYearButton
+            classGroupId={id}
+            name={classGroup.name}
+            grade={classGroup.grade}
+            subject={classGroup.subject}
+            schoolYear={classGroup.schoolYear}
+            isArchived={isArchived}
+          />
+          {!isArchived && (
             <Button asChild>
               <Link href={`/classes/${id}/plan`}>
                 <Sparkles className="mr-2 size-4" />
                 Stunde planen
               </Link>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Curriculum progress */}
