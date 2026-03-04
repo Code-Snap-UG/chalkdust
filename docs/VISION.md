@@ -14,10 +14,12 @@
 6. [Feature 4 — Exam Generator](#6-feature-4--exam-generator)
 7. [Feature 5 — Material & Worksheet Generator](#7-feature-5--material--worksheet-generator)
 8. [Feature 6 — Shared Access & Substitute Flow](#8-feature-6--shared-access--substitute-flow)
-9. [Agentic Ideas](#9-agentic-ideas)
-10. [Screen Map](#10-screen-map)
-11. [Data Model Evolution](#11-data-model-evolution)
-12. [Implementation Phases](#12-implementation-phases)
+9. [Feature 7 — Classroom Tools](#9-feature-7--classroom-tools)
+10. [Feature 8 — Interactive Whiteboard](#10-feature-8--interactive-whiteboard)
+11. [Agentic Ideas](#11-agentic-ideas)
+12. [Screen Map](#12-screen-map)
+13. [Data Model Evolution](#13-data-model-evolution)
+14. [Implementation Phases](#14-implementation-phases)
 
 ---
 
@@ -306,7 +308,7 @@ The AI uses:
 1. **Diary entries in the selected time range** — what was actually taught, not just what was planned. Deviated and partial entries are handled the same way as in lesson planning.
 2. **Curriculum topic coverage** — which topics are marked as covered or in-progress in the curriculum view.
 3. **Teacher configuration** — duration, difficulty split (e.g. "40% basic, 50% standard, 10% extended"), any specific topics to include or exclude.
-4. **Previous exams for this class** (if any) — to avoid repeating the same task formats or testing the same material twice.
+4. **Previous exams for this class** (if any) — Recurring task formats are intentional, not a problem. Students should build on familiar structures and develop fluency with them. The AI aligns task design with the formats used in ESA and MSA exams, and ensures a variety of cognitive operators are practised across exams (e.g. *nennen*, *beschreiben*, *erklären*, *analysieren* in language subjects; *berechnen*, *skizzieren*, *begründen* in STEM subjects).
 
 ### Refinement and export
 
@@ -457,7 +459,90 @@ ClassAccessLog
 
 ---
 
-## 9. Agentic Ideas
+## 9. Feature 7 — Classroom Tools
+
+### What it is
+
+A small suite of lightweight, practical tools that teachers reach for constantly but have no good home. These are not AI features — they are simple utilities that belong in Chalkdust because Chalkdust is meant to be the teacher's co-pilot for the entire lesson, not just the planning phase. Having these available in the same place reduces the friction of switching between apps mid-lesson.
+
+### Random Number Generator
+
+A simple dice / random number tool. The teacher sets a range (e.g. 1–30, 1–6) and gets a random number on demand. Useful for picking exercise numbers, assigning groups, or deciding anything on the fly. The UI can optionally show a dice animation for clarity and fun.
+
+### Spinning Wheel — Random Picker
+
+A spinning wheel that the teacher can spin to pick a random item from a list. The wheel lands on a result with a short animation. Two modes:
+
+- **Student name wheel** — populated automatically from the class group's student list. The teacher selects a class, the wheel fills with the first names from that class. Useful for calling on students at random without the awkwardness of obviously choosing.
+- **Custom wheel** — the teacher enters their own list of items (e.g. topic names, group assignments, activity types). Saved per teacher so they don't have to re-enter them each time.
+
+### Student names per class group
+
+To support the student name wheel, teachers need a way to add student first names to a class group. This is kept intentionally minimal for data protection reasons:
+
+- **First names only** — no last names, no identifiers beyond a first name string.
+- Stored per class group, editable at any time.
+- Used only within Chalkdust for features like the random picker. Not shared, not exported.
+
+The input is a simple list — the teacher types or pastes names, one per line. No complex student management; just a name list attached to the class.
+
+### Data model (new)
+
+```
+ClassGroup (updated)
+  studentFirstNames  (text[] — array of first name strings, optional)
+
+CustomWheel
+  id, teacherId
+  name             — e.g. "Gruppenthemen KW12"
+  items            — text[] — list of items on the wheel
+  createdAt, updatedAt
+```
+
+### Implementation status
+- **Not yet built.** This is a planned future feature.
+
+---
+
+## 10. Feature 8 — Interactive Whiteboard
+
+### What it is
+
+A fully-featured interactive whiteboard built directly into Chalkdust, so the teacher never has to leave the application to run a lesson. The goal is not to replace dedicated tools like Miro or GoodNotes, but to cover the everyday classroom use cases well enough that switching apps becomes unnecessary. The whiteboard is always one click away from the lesson plan or diary — context is always at hand.
+
+### Core functionality
+
+| Tool | Description |
+|---|---|
+| **Freehand drawing** | Pen, pencil, and highlighter with adjustable size and colour. Works with mouse, trackpad, and stylus/touch. |
+| **Shapes & lines** | Rectangles, circles, arrows, and connecting lines for diagrams and structured layouts. |
+| **Text boxes** | Typed text anywhere on the canvas, with font size and colour control. |
+| **Eraser** | Partial and full erase; option to clear the entire board. |
+| **Sticky notes** | Coloured note cards for brainstorming, collecting student responses, or structuring discussions. |
+| **Image upload** | Drag-and-drop images onto the board (e.g. diagrams, textbook scans, student work). |
+| **Undo / redo** | Full history stack. |
+| **Zoom & pan** | Infinite canvas with smooth zoom and pan. |
+
+### Sharing & display
+
+The teacher can project the whiteboard directly from the browser in full-screen mode. A separate **student view URL** (read-only, no account required) lets students follow along on their own devices in real time. The board can also be exported as a PNG or PDF for distribution or archiving.
+
+### Connection to the rest of Chalkdust
+
+- A whiteboard session can be started directly from a **lesson plan phase** — the plan stays visible in a side panel while the board is open.
+- Finished boards can be **saved to the diary** as an attachment, keeping a visual record of what was drawn or discussed in a lesson.
+- Saved boards are browsable per class, giving the teacher a visual history of lesson artefacts alongside the written diary entries.
+
+### Why it belongs here
+
+Every digital classroom workflow involves a whiteboard at some point. If the teacher has to switch to a separate app, they lose context, waste time, and accumulate yet another tool to manage. Having the whiteboard inside Chalkdust means it can be directly linked to lesson plans, enriched by AI suggestions (e.g. pre-filled diagrams from a generated worksheet), and archived automatically as part of the class diary. It completes the vision of Chalkdust as a single place for the entire lesson lifecycle.
+
+### Implementation status
+- **Not yet built.** This is a planned future feature. Likely built on an open-source canvas library (e.g. Excalidraw, tldraw) embedded and extended within the Chalkdust UI.
+
+---
+
+## 11. Agentic Ideas
 
 These are forward-looking ideas for how Chalkdust could deepen its role as an active teaching co-pilot — not just a tool that responds to requests, but one that proactively helps.
 
@@ -503,7 +588,7 @@ After a lesson date passes, Chalkdust sends the teacher a prompt to update the d
 
 ---
 
-## 10. Screen Map
+## 12. Screen Map
 
 ```mermaid
 flowchart LR
@@ -571,7 +656,7 @@ flowchart LR
 
 ---
 
-## 11. Data Model Evolution
+## 13. Data Model Evolution
 
 The current schema is solid for the core loop. New features require the following additions.
 
@@ -590,74 +675,73 @@ The current schema is solid for the core loop. New features require the followin
 ### New tables needed
 
 **`exams`** — Exam Generator (Feature 4)
-```sql
-CREATE TABLE exams (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  class_group_id UUID NOT NULL REFERENCES class_groups(id),
-  teacher_id   UUID NOT NULL REFERENCES teachers(id),
-  title        VARCHAR(500) NOT NULL,
-  duration     INTEGER NOT NULL,        -- minutes
-  total_points INTEGER NOT NULL,
-  status       VARCHAR(20) NOT NULL DEFAULT 'draft',  -- draft | approved
-  tasks        JSONB NOT NULL DEFAULT '[]',
-  covered_topics JSONB NOT NULL DEFAULT '[]',         -- array of curriculumTopicIds
-  time_range_start DATE,
-  time_range_end   DATE,
-  notes        TEXT,
-  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMP NOT NULL DEFAULT NOW()
-);
+```
+id, classGroupId, teacherId
+title, duration, totalPoints
+status              — "draft" | "approved"
+tasks               — jsonb array of task objects
+coveredTopics       — jsonb array of curriculumTopicIds
+timeRangeStart, timeRangeEnd
+notes
+createdAt, updatedAt
 ```
 
-**`generated_materials`** — Material Generator (Feature 5)
-```sql
-CREATE TABLE generated_materials (
-  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id     UUID NOT NULL REFERENCES teachers(id),
-  lesson_plan_id UUID REFERENCES lesson_plans(id) ON DELETE SET NULL,
-  diary_entry_id UUID REFERENCES diary_entries(id) ON DELETE SET NULL,
-  title          VARCHAR(500) NOT NULL,
-  type           VARCHAR(50) NOT NULL,   -- worksheet | handout | quiz | discussion_prompt | differentiation_sheet
-  content        TEXT NOT NULL,          -- markdown + optional LaTeX
-  target_difficulty VARCHAR(20),         -- basic | standard | extended | all
-  status         VARCHAR(20) NOT NULL DEFAULT 'draft',
-  created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at     TIMESTAMP NOT NULL DEFAULT NOW()
-);
+**`generated_materials`** — Material & Worksheet Generator (Feature 5)
+```
+id, teacherId
+lessonPlanId        — nullable FK → lesson_plans
+diaryEntryId        — nullable FK → diary_entries
+title, type         — worksheet | handout | quiz | discussion_prompt | differentiation_sheet
+content             — markdown + optional LaTeX
+targetDifficulty    — basic | standard | extended | all
+status              — "draft" | "approved"
+createdAt, updatedAt
 ```
 
 **`class_access_grants`** — Shared Access (Feature 6)
-```sql
-CREATE TABLE class_access_grants (
-  id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  class_group_id         UUID NOT NULL REFERENCES class_groups(id) ON DELETE CASCADE,
-  granted_by_teacher_id  UUID NOT NULL REFERENCES teachers(id),
-  granted_to_teacher_id  UUID NOT NULL REFERENCES teachers(id),
-  access_level           VARCHAR(20) NOT NULL,  -- read_only | diary_write | full_write
-  expires_at             TIMESTAMP,
-  status                 VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | active | revoked
-  created_at             TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at             TIMESTAMP NOT NULL DEFAULT NOW()
-);
+```
+id, classGroupId, grantedByTeacherId, grantedToTeacherId
+accessLevel         — read_only | diary_write | full_write
+expiresAt           — nullable
+status              — pending | active | revoked
+createdAt, updatedAt
+```
 
-CREATE TABLE class_access_log (
-  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  class_access_grant_id UUID NOT NULL REFERENCES class_access_grants(id),
-  actor_teacher_id     UUID NOT NULL REFERENCES teachers(id),
-  action               VARCHAR(100) NOT NULL,
-  created_at           TIMESTAMP NOT NULL DEFAULT NOW()
-);
+**`class_access_log`** — Shared Access (Feature 6)
+```
+id, classAccessGrantId, actorTeacherId
+action              — e.g. "viewed_diary", "added_diary_entry"
+createdAt
+```
+
+**`custom_wheels`** — Classroom Tools (Feature 7)
+```
+id, teacherId
+name                — e.g. "Gruppenthemen KW12"
+items               — text[] — list of items on the wheel
+createdAt, updatedAt
+```
+
+**`whiteboard_sessions`** — Interactive Whiteboard (Feature 8)
+```
+id, teacherId, classGroupId
+title               — optional label
+data                — jsonb — canvas state (Excalidraw / tldraw format)
+lessonPlanId        — nullable FK → lesson_plans
+diaryEntryId        — nullable FK → diary_entries (set when saved to diary)
+createdAt, updatedAt
 ```
 
 ### Schema modifications needed on existing tables
 
-- `materials`: add `generated_material_id` (nullable FK → `generated_materials`) so the existing materials table can reference a generated material record
-- `lesson_snippets`: no changes needed — schema is already complete
-- `class_groups`: no changes needed — `predecessor_id` and transition fields already exist
+- `materials`: add `generatedMaterialId` (nullable FK → `generated_materials`)
+- `class_groups`: add `studentFirstNames` (text[] — first names only, for the random picker)
+- `lesson_snippets`: no changes needed
+- `diary_entries`: no changes needed — whiteboard sessions link back to diary entries via `diaryEntryId` on the session
 
 ---
 
-## 12. Implementation Phases
+## 14. Implementation Phases
 
 ### Phase 0 — Foundation (current state)
 - Classes, curriculum, lesson planning, diary, snippets (Phase 1) all built
@@ -700,7 +784,21 @@ Required before shared access and production deployment:
 - Transition context injection into lesson planning for linked classes
 - Multi-year class history chain view
 
-### Phase 7 — Agentic Features (progressive rollout)
+### Phase 7 — Classroom Tools
+- Student first names list per class group (input UI in class settings)
+- Random number generator / dice tool
+- Spinning wheel with student name mode and custom mode
+- `custom_wheels` table and save/load flow
+
+### Phase 8 — Interactive Whiteboard
+- Embed open-source canvas library (Excalidraw or tldraw) into Chalkdust UI
+- Full-screen projector mode
+- Read-only student view URL (no account required)
+- Save board to diary as attachment
+- Per-class board history view
+- Deep links from lesson plan phases to whiteboard sessions
+
+### Phase 9 — Agentic Features (progressive rollout)
 - Proactive lesson gap detection (passive scan, dashboard alert)
 - Exam-to-diary loop (results logging, feedback into context)
 - Snippet suggestions during plan generation
