@@ -11,19 +11,18 @@ import { Input } from "@/components/ui/input";
 import {
   Check,
   CheckCircle,
-  Clock,
-  BookOpen,
   FileEdit,
-  Home,
   Loader2,
   MessageSquare,
   Send,
-  Target,
-  Users,
 } from "lucide-react";
 import type { LessonPlanOutput } from "@/lib/ai/schemas";
 import type { lessonPlans } from "@/lib/db/schema";
-import { SaveSnippetDialog } from "@/components/snippets/save-snippet-dialog";
+import { TimelineSection } from "./timeline-section";
+import { ObjectivesSection } from "./objectives-section";
+import { MaterialsSection } from "./materials-section";
+import { DifferentiationSection } from "./differentiation-section";
+import { HomeworkSection } from "./homework-section";
 
 type PlanRecord = typeof lessonPlans.$inferSelect;
 
@@ -75,8 +74,6 @@ export function LessonPlanDetailClient({
   const { messages, sendMessage, status, error } = useChat({ transport });
 
   // Refresh the displayed plan whenever the AI finishes a response.
-  // Watching the status transition to "ready" is more reliable than onFinish
-  // because it fires regardless of how the SDK version handles the callback.
   const prevStatusRef = useRef(status);
   useEffect(() => {
     const prev = prevStatusRef.current;
@@ -93,6 +90,25 @@ export function LessonPlanDetailClient({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  async function handleBlockSave(
+    field: keyof Pick<
+      DisplayPlan,
+      "objectives" | "timeline" | "differentiation" | "materials" | "homework"
+    >,
+    value: unknown
+  ) {
+    const res = await fetch(`/api/lesson-plans/${initialPlan.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (!res.ok) {
+      throw new Error("Speichern fehlgeschlagen");
+    }
+    const updated: PlanRecord = await res.json();
+    setPlan(toDisplayPlan(updated));
+  }
 
   async function approvePlan() {
     setApproving(true);
@@ -111,11 +127,6 @@ export function LessonPlanDetailClient({
     }
   }
 
-  const totalMinutes = plan.timeline.reduce(
-    (sum, p) => sum + p.durationMinutes,
-    0
-  );
-
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -129,8 +140,7 @@ export function LessonPlanDetailClient({
                   month: "long",
                   year: "numeric",
                 })
-              : "Kein Datum"}{" "}
-            &middot; {totalMinutes} Minuten
+              : "Kein Datum"}
           </p>
         </div>
         <Badge variant={plan.status === "approved" ? "default" : "secondary"}>
@@ -151,126 +161,32 @@ export function LessonPlanDetailClient({
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left: Plan content */}
         <div className="flex flex-col gap-6">
-          {/* Objectives */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="size-4" />
-                Lernziele
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-1.5">
-                {plan.objectives.map((obj, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
-                    {obj.text}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <ObjectivesSection
+            objectives={plan.objectives}
+            onSave={(updated) => handleBlockSave("objectives", updated)}
+          />
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="size-4" />
-                Stundenablauf
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {plan.timeline.map((phase, i) => (
-                <div key={i} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{phase.phase}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {phase.method}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {phase.durationMinutes} Min.
-                      </span>
-                      <SaveSnippetDialog
-                        phase={phase}
-                        lessonPlanId={initialPlan.id}
-                      />
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-sm text-muted-foreground">
-                    {phase.description}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <TimelineSection
+            phases={plan.timeline}
+            lessonDurationMinutes={plan.durationMinutes}
+            lessonPlanId={initialPlan.id}
+            onSave={(updated) => handleBlockSave("timeline", updated)}
+          />
 
-          {/* Differentiation */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="size-4" />
-                Differenzierung
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">Schwächere Schüler</p>
-                <p className="text-sm text-muted-foreground">
-                  {plan.differentiation.weaker}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Stärkere Schüler</p>
-                <p className="text-sm text-muted-foreground">
-                  {plan.differentiation.stronger}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <DifferentiationSection
+            differentiation={plan.differentiation}
+            onSave={(updated) => handleBlockSave("differentiation", updated)}
+          />
 
-          {/* Materials */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BookOpen className="size-4" />
-                Materialien
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {plan.materials.map((mat, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Badge
-                      variant="secondary"
-                      className="mt-0.5 shrink-0 text-xs"
-                    >
-                      {mat.type}
-                    </Badge>
-                    <div>
-                      <span className="font-medium">{mat.title}</span>
-                      <p className="text-muted-foreground">{mat.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <MaterialsSection
+            materials={plan.materials}
+            onSave={(updated) => handleBlockSave("materials", updated)}
+          />
 
-          {/* Homework */}
-          {plan.homework && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Home className="size-4" />
-                  Hausaufgaben
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{plan.homework}</p>
-              </CardContent>
-            </Card>
-          )}
+          <HomeworkSection
+            homework={plan.homework}
+            onSave={(updated) => handleBlockSave("homework", updated)}
+          />
         </div>
 
         {/* Right: Chat + Approve */}
