@@ -792,3 +792,134 @@ Using different models/configurations per mode lets us optimize for cost and lat
 2. **LLM provider**: OpenAI vs Anthropic vs open-source? Cost considerations for PDF parsing (can be large documents). The architecture supports swapping providers via the Vercel AI SDK.
 3. **Database choice**: PostgreSQL + Prisma is the most common Next.js stack. Confirm?
 4. **Conversation persistence**: Should chat history for plan refinement be stored long-term, or only until the plan is approved?
+
+---
+
+## 9. Inline Block Editing (Phase 1 — implemented March 2026)
+
+Teachers can now directly edit every section of a lesson plan without going through AI. This supplements the AI chat refinement loop: the chat is "tell the AI what to improve," the direct edit is "I know exactly what I want."
+
+### Design principles
+
+1. **No dialogs for content editing.** All editing happens inline, within the card, in full context of the surrounding plan.
+2. **One block in edit mode at a time.** Prevents multi-dirty-state conflicts.
+3. **Empty states are first-class.** Every section handles `[]` / `null` gracefully rather than crashing or hiding.
+
+### API: `PATCH /api/lesson-plans/[id]`
+
+Added to `src/app/api/lesson-plans/[id]/route.ts` alongside the existing `GET`.
+
+**Body:** A partial object — only the fields being updated are sent. At least one field must be present.
+
+```typescript
+{
+  objectives?:      Array<{ text: string; curriculumTopicId?: string }>,
+  timeline?:        Array<{ phase: string; durationMinutes: number; description: string; method: string }>,
+  differentiation?: { weaker: string; stronger: string },
+  materials?:       Array<{ title: string; type: string; description: string }>,
+  homework?:        string | null,
+}
+```
+
+Validation uses `lessonPlanSchema.partial()` from `src/lib/ai/schemas.ts`. On success returns the full updated plan record (same shape as `GET`).
+
+### Component architecture
+
+`LessonPlanDetailClient` (`lesson-plan-detail-client.tsx`) is the orchestrator. It owns the `plan` state and a `handleBlockSave` function that calls `PATCH` and updates local state on success — no full page reload needed.
+
+```typescript
+async function handleBlockSave(field, value) {
+  const res = await fetch(`/api/lesson-plans/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ [field]: value }),
+  });
+  const updated = await res.json();
+  setPlan(toDisplayPlan(updated));
+}
+```
+
+Each section receives a slice of plan state and an `onSave` callback. Draft state lives inside each section component, not in the parent.
+
+### Section components
+
+All live in `src/app/(dashboard)/lesson-plans/[id]/`.
+
+| File | Section | Edit trigger | Delete confirm |
+|------|---------|-------------|---------------|
+| `objectives-section.tsx` | Lernziele | Per-item pencil icon | Immediate (no confirm) |
+| `timeline-section.tsx` | Stundenablauf | Delegates to `TimelinePhaseRow` | — |
+| `timeline-phase-row.tsx` | Individual phase | Pencil icon in phase header | Inline two-step confirm |
+| `materials-section.tsx` | Materialien | Per-item pencil icon | Inline two-step confirm |
+| `differentiation-section.tsx` | Differenzierung | Pencil icon in card header | n/a (single object) |
+| `homework-section.tsx` | Hausaufgaben | Pencil icon in card header | n/a (single field) |
+
+**`TimelineSection`** also shows a real-time duration indicator in the card header — green when total matches the lesson duration, amber when under, red when over. The indicator updates as the teacher types in a phase's duration field (before saving).
+
+**`HomeworkSection`** is always rendered, even when `homework` is `null` — showing a muted placeholder. Teachers can add homework even if the AI left it empty.
+
+### Coexistence with AI chat
+
+The AI chat refinement loop is unchanged. When the AI finishes a response, `LessonPlanDetailClient` re-fetches the plan from `GET /api/lesson-plans/[id]` and updates all section components via their props. Section components sync their local state from props whenever they are not in an active edit session.
+
+---
+
+## 10. Drag-to-Reorder + Snippet Drawer (Phase 2 — implemented March 2026)
+
+Teachers can now reorder timeline phases by dragging, and insert saved snippets into the timeline from a side drawer — without leaving the plan.
+
+### Drag-to-reorder
+
+`TimelineSection` wraps the phase list in `DndContext` (from `@dnd-kit/core`) and `SortableContext` (from `@dnd-kit/sortable`) with `verticalListSortingStrategy`. Sensors: `PointerSensor` and `KeyboardSensor`.
+
+Each `TimelinePhaseRow` calls `useSortable({ id })` (id = `"phase-0"`, `"phase-1"`, ...) and applies the resulting `ref`, `style` (CSS transform + transition + drag opacity), and drag handle attributes/listeners. The `GripVertical` icon switches to `cursor-grab active:cursor-grabbing` when drag is available.
+
+**Drag is disabled while a phase is in edit mode** — when `isEditing` is true, an empty object is passed instead of `listeners` to the drag handle. This prevents accidental reordering while typing.
+
+`onDragEnd` in `TimelineSection`:
+```typescript
+function handleDragEnd(event: DragEndEvent) {
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
+  const oldIndex = phases.findIndex((_, i) => `phase-${i}` === active.id);
+  const newIndex = phases.findIndex((_, i) => `phase-${i}` === over.id);
+  const reordered = arrayMove(phases, oldIndex, newIndex);
+  setPhases(reordered);
+  onSave(reordered); // persists via PATCH /api/lesson-plans/[id]
+}
+```
+
+### Snippet drawer
+
+**File:** `src/app/(dashboard)/lesson-plans/[id]/snippet-drawer.tsx`
+
+A `<Sheet side="right">` overlay triggered by a "Snippets" (`Library` icon) button in the `TimelineSection` card header. It does not displace the two-column layout.
+
+**Data:** On open, fetches `GET /api/snippets`. The drawer holds its own `snippets` state; filtering is fully client-side — no extra API calls.
+
+**Filters:**
+- Search input: case-insensitive match on `title` and `description`
+- Phase filter pills: "Alle", "Einstieg", "Erarbeitung", "Sicherung", "Abschluss" — match on `snippet.phase`
+
+**Snippet-to-phase conversion:**
+```typescript
+function snippetToPhase(snippet: LessonSnippet): TimelinePhase {
+  return {
+    phase: snippet.phase,
+    durationMinutes: snippet.durationMinutes ?? 10,
+    description: snippet.description,
+    method: snippet.method ?? "Unterrichtsgespräch",
+  };
+}
+```
+
+**"Einfügen" click:** Calls `onInsert(snippetToPhase(snippet))` in `TimelineSection`, which appends the new phase to the array and immediately opens it in edit mode so the teacher can review/adjust before saving. The drawer stays open — the teacher may want to insert multiple snippets.
+
+### New dependency
+
+`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` — installed March 2026.
+
+### New file
+
+| File | Purpose |
+|------|---------|
+| `snippet-drawer.tsx` | Sheet overlay — fetch, search, filter, insert snippets into timeline |
