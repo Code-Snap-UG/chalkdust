@@ -1,0 +1,2 @@
+When reporting information to me, be extremely concise and sacrifice grammar for the sake of concision.
+When writing information in documentation files, be precise and concise but do not sacrifice grammar.

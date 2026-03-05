@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,12 +49,20 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
   deviated: "destructive",
 };
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
 export default function DiaryPage() {
   const params = useParams();
   const classGroupId = params.id as string;
 
-  const [entries, setEntries] = useState<DiaryEntry[]>([]);
-  const [isArchived, setIsArchived] = useState(false);
+  const { data, mutate } = useSWR<{ entries: DiaryEntry[]; isArchived: boolean }>(
+    `/api/classes/${classGroupId}/diary`,
+    fetcher
+  );
+
+  const entries = data?.entries ?? [];
+  const isArchived = data?.isArchived ?? false;
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editState, setEditState] = useState<
     Record<string, { actualSummary: string; teacherNotes: string; progressStatus: string }>
@@ -63,19 +72,6 @@ export default function DiaryPage() {
   const [entryMaterials, setEntryMaterials] = useState<
     Record<string, MaterialItem[]>
   >({});
-
-  const loadEntries = useCallback(async () => {
-    const res = await fetch(`/api/classes/${classGroupId}/diary`);
-    if (res.ok) {
-      const data = await res.json();
-      setEntries(data.entries || []);
-      setIsArchived(data.isArchived ?? false);
-    }
-  }, [classGroupId]);
-
-  useEffect(() => {
-    loadEntries();
-  }, [loadEntries]);
 
   async function loadMaterials(entryId: string) {
     const res = await fetch(`/api/diary/${entryId}/materials`);
@@ -116,7 +112,7 @@ export default function DiaryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(state),
       });
-      await loadEntries();
+      await mutate();
     } finally {
       setSaving(null);
     }

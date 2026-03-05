@@ -12,6 +12,7 @@ import {
   Calendar,
   Clock,
   FileText,
+  PencilLine,
   Sparkles,
   Target,
   CheckCircle,
@@ -26,22 +27,28 @@ export default async function ClassDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const classGroup = await getClassGroup(id);
 
-  if (!classGroup) notFound();
-
-  const [topics, diaryEntries, lessonPlans] = await Promise.all([
+  const [classGroup, topics, diaryEntries, lessonPlans] = await Promise.all([
+    getClassGroup(id),
     getCurriculumTopics(id),
     getDiaryEntries(id),
     getLessonPlans(id),
   ]);
 
-  const completedEntries = diaryEntries.filter(
-    (e) => e.progressStatus === "completed"
-  );
-  const plannedEntries = diaryEntries.filter(
-    (e) => e.progressStatus === "planned"
-  );
+  if (!classGroup) notFound();
+
+  // Single pass to partition diary entries into the three buckets needed below
+  const completedEntries: typeof diaryEntries = [];
+  const plannedEntries: typeof diaryEntries = [];
+  const taughtEntries: typeof diaryEntries = [];
+  for (const e of diaryEntries) {
+    if (e.progressStatus === "planned") {
+      plannedEntries.push(e);
+    } else {
+      taughtEntries.push(e);
+      if (e.progressStatus === "completed") completedEntries.push(e);
+    }
+  }
   const totalHours = lessonPlans.reduce(
     (sum, p) => sum + (p.durationMinutes || 0),
     0
@@ -75,12 +82,20 @@ export default async function ClassDetailPage({
             isArchived={isArchived}
           />
           {!isArchived && (
-            <Button asChild>
-              <Link href={`/classes/${id}/plan`}>
-                <Sparkles className="mr-2 size-4" />
-                Stunde planen
-              </Link>
-            </Button>
+            <>
+              <Button variant="outline" asChild>
+                <Link href={`/classes/${id}/plan/blank`}>
+                  <PencilLine className="mr-2 size-4" />
+                  Manuell erstellen
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href={`/classes/${id}/plan`}>
+                  <Sparkles className="mr-2 size-4" />
+                  Stunde planen
+                </Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -168,21 +183,38 @@ export default async function ClassDetailPage({
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-3">
         {!isArchived && (
-          <Link href={`/classes/${id}/plan`}>
-            <Card className="cursor-pointer transition-shadow hover:shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                  <Sparkles className="size-4 text-primary" />
-                  Stunde planen
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">
-                  Erstelle mit KI-Unterstützung einen neuen Unterrichtsplan.
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
+          <>
+            <Link href={`/classes/${id}/plan`}>
+              <Card className="cursor-pointer transition-shadow hover:shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="size-4 text-primary" />
+                    Stunde planen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Erstelle mit KI-Unterstützung einen neuen Unterrichtsplan.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href={`/classes/${id}/plan/blank`}>
+              <Card className="cursor-pointer transition-shadow hover:shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                    <PencilLine className="size-4 text-primary" />
+                    Manuell erstellen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Erstelle einen Unterrichtsplan ohne KI-Unterstützung.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </>
         )}
 
         <Link href={`/classes/${id}/diary`}>
@@ -293,8 +325,7 @@ export default async function ClassDetailPage({
             Letzte Stunden
           </h3>
           <div className="flex flex-col gap-2">
-            {diaryEntries
-              .filter((e) => e.progressStatus !== "planned")
+            {taughtEntries
               .slice(0, 10)
               .map((entry) => (
                 <div

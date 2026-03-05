@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { Loader2, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,25 +40,20 @@ type SnippetDrawerProps = {
   onInsert: (phase: TimelinePhase) => void;
 };
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
 export function SnippetDrawer({
   open,
   onOpenChange,
   onInsert,
 }: SnippetDrawerProps) {
-  const [snippets, setSnippets] = useState<LessonSnippet[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [phaseFilter, setPhaseFilter] = useState<string>("Alle");
 
-  useEffect(() => {
-    if (!open) return;
-    setIsLoading(true);
-    fetch("/api/snippets")
-      .then((r) => r.json())
-      .then((data: LessonSnippet[]) => setSnippets(data))
-      .catch(() => setSnippets([]))
-      .finally(() => setIsLoading(false));
-  }, [open]);
+  const { data: snippets = [], isLoading } = useSWR<LessonSnippet[]>(
+    open ? "/api/snippets" : null,
+    fetcher
+  );
 
   const filtered = snippets.filter((s) => {
     const q = searchQuery.toLowerCase();

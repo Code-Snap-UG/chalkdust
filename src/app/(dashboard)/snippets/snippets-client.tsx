@@ -18,7 +18,7 @@ export function SnippetsClient({ snippets }: Props) {
 
   const allTags = Array.from(
     new Set(snippets.flatMap((s) => (s.tags as string[]) ?? []))
-  ).sort();
+  ).toSorted();
 
   function toggleTag(tag: string) {
     setActiveTags((prev) =>

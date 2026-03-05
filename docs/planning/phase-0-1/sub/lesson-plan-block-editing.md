@@ -527,46 +527,72 @@ function snippetToPhase(snippet: LessonSnippet): TimelinePhase {
 
 ---
 
-## Future — Global Edit Mode and Blank Plan Creation
+## Future — Global Edit Mode
 
-These are not fully designed yet but should inform the component architecture built in Phases 1 and 2.
+**Status: Abandoned.** Global edit mode was originally scoped here but has been dropped from the roadmap. The per-block editing added in Phase 1 is sufficient — a separate "all blocks visible at once" mode adds complexity without clear UX benefit given that individual blocks are always one click away.
 
-### Global Edit Mode
+---
 
-A `"Bearbeiten"` button in the plan header (next to the status badge) activates a richer editing state:
+## Phase 3 — Manual (Blank) Plan Creation
 
-- All blocks simultaneously show their edit affordances (pencil icons, drag handles become active, add buttons become prominent)
-- The snippet drawer opens automatically (or a prominent "Snippets" button appears)
-- A `"Fertig"` button deactivates global edit mode and returns to the clean read-only view
+**Status: Implemented March 2026.**
 
-In Phases 1 and 2, individual items can be edited locally without activating global edit mode. Global edit mode is the "I'm going to reshape the whole plan" experience.
+Teachers can now create a lesson plan entirely from scratch, without AI involvement. The blank creation flow reuses the existing `LessonPlanDetailClient` editing surface (with Phase 1 section components handling empty arrays as first-class state) — no new editing components were needed.
 
-The parent component will gain a `globalEditMode: boolean` state. Section components receive this as a prop and use it to show/hide affordances accordingly.
+### Entry point
 
-### Blank Plan Creation
+A **"Manuell erstellen"** button (outline style, `PencilLine` icon) was added to the class dashboard (`src/app/(dashboard)/classes/[id]/page.tsx`) in two places — the header action group alongside "Stunde planen", and as a sibling quick-link card. Both are guarded by `!isArchived`.
 
-A future route `/classes/[id]/plan/blank` (or a toggle on the existing planning page) renders the same editing surface with an empty initial state:
+### Flow
 
-```typescript
-const emptyPlan: DisplayPlan = {
-  topic: "",
-  objectives: [],
-  timeline: [],
-  differentiation: { weaker: "", stronger: "" },
-  materials: [],
-  homework: null,
-  status: "draft",
-  lessonDate: null,
-  durationMinutes: 45,
-};
+```
+Class Dashboard  →  /classes/[id]/plan/blank  →  /lesson-plans/[id]
+(button click)      (mini setup form)             (existing inline editors)
 ```
 
-Each section handles its empty state gracefully:
-- `TimelineSection` with `phases = []`: renders `"Noch keine Phasen — füge deine erste hinzu."` empty state with a prominent `"+ Phase hinzufügen"` button
-- `ObjectivesSection` with `objectives = []`: renders `"Noch keine Lernziele."` with `"+ Lernziel hinzufügen"`
-- And so on for Materials
+1. Teacher clicks "Manuell erstellen"
+2. A brief form collects: **topic** (required), **date** (optional), **duration** (select: 45 / 60 / 90 / 120 min, default 45)
+3. On submit, `createBlankLessonPlan` server action inserts a draft record with empty arrays and null content fields
+4. Teacher is redirected to `/lesson-plans/[id]` where all Phase 1 section components are available with their empty-state prompts
 
-The creation path uses `POST /api/lesson-plans` (creating a new draft record) rather than `PATCH`. On first save of any field, the plan record is created; subsequent saves use `PATCH`. This is why the component architecture avoids hard-coding that a `planId` always exists — it can be `null` before first creation and the section components should forward this constraint up to the parent's save handler.
+### New files
+
+| File | Purpose |
+|------|---------|
+| `src/app/(dashboard)/classes/[id]/plan/blank/page.tsx` | Server component — fetches class group (redirects if archived), renders `BlankPlanForm` |
+| `src/app/(dashboard)/classes/[id]/plan/blank/blank-plan-form.tsx` | Client form — topic input, date picker, duration select, calls server action, redirects on success |
+
+### New server action
+
+`createBlankLessonPlan` in `src/lib/actions/lesson-plans.ts`:
+
+```typescript
+export async function createBlankLessonPlan(
+  classGroupId: string, topic: string,
+  lessonDate?: string, durationMinutes?: number
+) {
+  const [created] = await db.insert(lessonPlans).values({
+    classGroupId, topic,
+    lessonDate: lessonDate || null,
+    durationMinutes: durationMinutes || 45,
+    status: "draft",
+    objectives: [], timeline: [],
+    differentiation: { weaker: "", stronger: "" },
+    materials: [], homework: null,
+  }).returning();
+  revalidatePath(`/classes/${classGroupId}`);
+  return created;
+}
+```
+
+### Acceptance criteria
+
+- [ ] "Manuell erstellen" button visible on class dashboard (header + quick-link card), hidden for archived classes
+- [ ] Clicking navigates to `/classes/[id]/plan/blank`
+- [ ] Form requires topic, date/duration are optional
+- [ ] Submit creates a draft record and redirects to `/lesson-plans/[id]`
+- [ ] Empty section components show add-item prompts (`+ Phase hinzufügen`, `+ Lernziel hinzufügen`, etc.)
+- [ ] All Phase 1 and Phase 2 behaviour is preserved on the resulting plan
 
 ### Drag-from-Drawer into Timeline
 
@@ -588,21 +614,29 @@ When the AI generates a plan, for each timeline phase it checks the teacher's sn
 
 ```
 src/app/(dashboard)/lesson-plans/[id]/
-  lesson-plan-detail-client.tsx       ← refactored orchestrator (existing file)
-  timeline-section.tsx                ← NEW: Phase 1
-  timeline-phase-row.tsx              ← NEW: Phase 1
-  objectives-section.tsx              ← NEW: Phase 1
-  materials-section.tsx               ← NEW: Phase 1
-  differentiation-section.tsx         ← NEW: Phase 1
-  homework-section.tsx                ← NEW: Phase 1
-  snippet-drawer.tsx                  ← NEW: Phase 2
+  lesson-plan-detail-client.tsx       ← refactored orchestrator (Phase 1)
+  timeline-section.tsx                ← Phase 1
+  timeline-phase-row.tsx              ← Phase 1
+  objectives-section.tsx              ← Phase 1
+  materials-section.tsx               ← Phase 1
+  differentiation-section.tsx         ← Phase 1
+  homework-section.tsx                ← Phase 1
+  snippet-drawer.tsx                  ← Phase 2
+
+src/app/(dashboard)/classes/[id]/
+  page.tsx                            ← MODIFIED: Phase 3 (added buttons + card)
+  plan/blank/
+    page.tsx                          ← NEW: Phase 3
+    blank-plan-form.tsx               ← NEW: Phase 3
 
 src/app/api/lesson-plans/[id]/
-  route.ts                            ← ADD PATCH handler (Phase 1)
+  route.ts                            ← PATCH handler added (Phase 1)
+
+src/lib/actions/lesson-plans.ts       ← createBlankLessonPlan added (Phase 3)
 ```
 
 No changes to:
-- `src/app/(dashboard)/classes/[id]/plan/page.tsx` — the generation page. This will be addressed in the future Blank Plan work stream.
+- `src/app/(dashboard)/classes/[id]/plan/page.tsx` — AI generation page, unchanged
 - `src/components/snippets/save-snippet-dialog.tsx` — bookmark dialog, unchanged
 - `src/app/api/chat/route.ts` — AI chat, unchanged
 - `src/lib/ai/schemas.ts` — Zod schemas, unchanged
