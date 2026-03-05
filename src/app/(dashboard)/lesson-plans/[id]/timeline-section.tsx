@@ -152,10 +152,11 @@ export function TimelineSection({
     setEditingIndex(next.length - 1);
   }
 
-  function handleAddFromSnippet(phase: TimelinePhase) {
+  async function handleAddFromSnippet(phase: TimelinePhase) {
     const next = [...phases, phase];
     setPhases(next);
     setEditingIndex(next.length - 1);
+    await onSave(next);
   }
 
   function handleDraftDurationChange(index: number, minutes: number) {

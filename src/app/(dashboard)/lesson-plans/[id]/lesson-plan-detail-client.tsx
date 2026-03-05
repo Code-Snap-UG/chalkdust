@@ -195,7 +195,7 @@ export function LessonPlanDetailClient({
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
                 <MessageSquare className="size-4" />
-                Plan verfeinern
+                ChAi - Plan verfeinern
               </CardTitle>
             </CardHeader>
             <CardContent>

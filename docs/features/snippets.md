@@ -2,7 +2,7 @@
 
 > **Status:** partial
 > **Created:** 2026-02-28
-> **Updated:** 2026-03-05
+> **Updated:** 2026-03-05 (Work Stream 1 — class-specific favorites — complete)
 
 ## 1. North Star Vision
 
@@ -70,18 +70,56 @@ erDiagram
 
 ---
 
-## 3. Current Implementation (Phase 1)
+## 3. Current Implementation
 
 ### What is built
 
 - **Database tables**: `lesson_snippets` and `snippet_class_favorites` in [`src/lib/db/schema.ts`](../src/lib/db/schema.ts)
 - **Server actions** in [`src/lib/actions/snippets.ts`](../src/lib/actions/snippets.ts):
   - `createSnippet(teacherId, data)` — saves a new snippet
-  - `getSnippets(teacherId, filters?)` — lists all snippets, with optional tag filter
+  - `getSnippets(teacherId, filters?)` — lists all snippets; accepts `{ tag?, classGroupId? }` — when `classGroupId` is set, SQL `INNER JOIN` on `snippet_class_favorites` returns only favorited snippets for that class
   - `getSnippet(id)` — fetches a single snippet by ID
-- **API routes** in [`src/app/api/snippets/route.ts`](../src/app/api/snippets/route.ts):
+  - `addClassFavorite(snippetId, classGroupId)` — `INSERT … ON CONFLICT DO NOTHING` (idempotent)
+  - `removeClassFavorite(snippetId, classGroupId)` — removes a single class pointer
+  - `getClassFavorites(classGroupId)` — returns all snippets favorited for a given class, ordered by `created_at DESC`
+  - `getSnippetFavoriteClasses(snippetId)` — returns `classGroupId[]` for which classes have a given snippet favorited (used by the lazy-load popover)
+- **API routes**:
   - `POST /api/snippets` — create a snippet
-  - `GET /api/snippets` — list snippets (accepts `?tag=` query param)
+  - `GET /api/snippets` — list snippets (accepts `?tag=` and `?classGroupId=` query params)
+  - `GET /api/snippets/:id/favorites` — returns `{ classGroupIds: string[] }` for that snippet
+  - `POST /api/snippets/:id/favorites` — body `{ classGroupId }`, adds class favorite → 201
+  - `DELETE /api/snippets/:id/favorites/:classGroupId` — removes class favorite → 204
+- **Snippet library UI** at `/snippets`:
+  - Grid view with tag filter pills
+  - When navigated from a class context (`?classGroupId=`), shows a "Klassen-Favoriten / Alle Bausteine" toggle (defaults to favorites)
+  - Star icon on every card; **in class context** — direct optimistic toggle (fills amber when favorited, outline otherwise, reverts on error); **in global view** — opens a lazy-loading popover showing all active classes with checkboxes pre-populated from `GET /api/snippets/:id/favorites`
+- **Class detail page** (`/classes/:id`):
+  - "Bausteine" section showing up to 6 class-favorited snippets (phase badge + title + duration + method)
+  - "Alle anzeigen →" link to `/snippets?classGroupId=:id`
+  - Empty state with direct link to the library
+
+### UX flows
+
+**Class context** (`/snippets?classGroupId=<id>`, reached from the class detail page):
+
+```
+Teacher clicks ★ on card
+  → Optimistic: star fills immediately (localFavorites Set updated)
+  → POST /api/snippets/:id/favorites { classGroupId }
+  → On success: confirmed
+  → On error: revert + toast
+```
+
+**Global view** (`/snippets`, no class context):
+
+```
+Teacher clicks ★ on card
+  → Popover opens with spinner
+  → GET /api/snippets/:id/favorites → { classGroupIds }
+  → Spinner replaced by class list with pre-checked checkboxes
+  → Each checkbox toggle fires POST or DELETE immediately
+  → Star fills amber if any class is checked; outline if none
+```
 
 ### Creating a snippet via API
 
@@ -123,36 +161,25 @@ Response `201 Created`:
 
 ## 4. Roadmap
 
-### Phase 2 — Extract from lesson plan
+### Next — Extract from lesson plan (Work Stream prerequisite)
 
 Add an endpoint `POST /api/snippets/extract` (or a server action) that accepts a `lessonPlanId` and a `timelinePhaseIndex`, extracts that specific phase from the plan's `timeline` JSONB array, and saves it as a snippet. The `sourceLessonPlanId` is automatically set. This is the "star a phase you liked" UX flow.
 
-### Phase 3 — Class-specific favorites
+### Next — Plug and play in the lesson planner (Work Stream 2)
 
-Add endpoints for the `snippet_class_favorites` join table:
-- `POST /api/snippets/:id/favorites` — mark a snippet as a favorite for a given class
-- `DELETE /api/snippets/:id/favorites/:classGroupId` — remove the favorite
-- `GET /api/snippets?classGroupId=...` — filter snippets to those favorited for a specific class
+A "From your snippets" collapsible panel in `/classes/:id/plan`:
+- Phase filter tabs + "Class favorites only" toggle
+- Pre-generation pinning: pinned snippets are injected into the LLM generation prompt as fixed constraints
+- Post-generation insert: "Add to plan" opens a phase picker to replace or insert adjacent to existing phases
+- Pinned phases visually labeled in the plan view
 
-### Phase 4 — Snippet library UI
+See [`planning/phase-0-1/phase-0-and-phase-1.md`](../planning/phase-0-1/phase-0-and-phase-1.md) Work Stream 2 for full spec.
 
-A dedicated `/snippets` page with:
-- Grid/list view of all snippets, grouped by phase or sorted by recency
-- Tag filter sidebar
-- Per-class favorite filter (when navigating from a class context)
-- Quick-create form (standalone snippet, not from a plan)
-- Preview modal showing full description + metadata
+### Next — AI-suggested snippet matching (Work Stream 3)
 
-### Phase 5 — Plug and play in the lesson planner
+After plan generation, an async secondary LLM call checks whether any generated phase matches a saved snippet. If so, a suggestion strip appears inline in the plan view: "Your Einstieg looks similar to 'Würfelspiel'. Use it?" Clicking replaces the phase; clicking "Dismiss" removes the suggestion without affecting the plan.
 
-When planning a lesson on `/classes/:id/plan`, add a "From your snippets" panel that:
-- Shows relevant snippets (filtered by phase, tags, or class favorites)
-- Lets the teacher drag or click a snippet into the lesson timeline
-- Passes the snippet content to the AI as a fixed block it should keep while generating the rest of the plan
-
-### Phase 6 — AI-suggested snippets
-
-When the AI generates a lesson plan, it can optionally suggest: "This Einstieg looks similar to your saved snippet 'Würfelspiel'. Want to use that instead?" — closing the loop between AI generation and the personal library.
+See [`planning/phase-0-1/phase-0-and-phase-1.md`](../planning/phase-0-1/phase-0-and-phase-1.md) Work Stream 3 for full spec.
 
 ---
 

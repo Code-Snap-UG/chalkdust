@@ -63,7 +63,7 @@ The following is an itemized audit based on implementation status fields in VISI
 | API routes (`GET/POST /api/snippets`) | Built | `src/app/api/snippets/route.ts` |
 | Save-from-plan dialog (`SaveSnippetDialog`) | Built | Bookmark icon on each timeline phase |
 | Snippet library UI (`/snippets`) | Built | Grid view, tag filter, preview modal |
-| Class favorites endpoints and UI | **NOT BUILT** | Phase 1, Work Stream 1 |
+| Class favorites endpoints and UI | Built | Work Stream 1 complete — star toggle, class picker popover, class detail section |
 | Plug-and-play in lesson planner | **NOT BUILT** | Phase 1, Work Stream 2 |
 | AI-suggested snippet matching | **NOT BUILT** | Phase 1, Work Stream 3 |
 
@@ -495,12 +495,12 @@ Phase 0 is complete when all of the following are true:
 Phase 1 is complete when all of the following are true:
 
 **Work Stream 1 — Class Favorites:**
-- [ ] Teacher can star a snippet for a specific class from the snippet library
-- [ ] Starring a snippet from no class context opens a class picker
-- [ ] Star icon reflects the current favorite status for the active class context
-- [ ] Class detail page (`/classes/:id`) shows a "Snippets" section with class-favorited snippets
-- [ ] Snippet library can be filtered to show only class-favorited snippets via `?classGroupId=`
-- [ ] Removing a favorite unmarks it globally (not per-class duplication)
+- [x] Teacher can star a snippet for a specific class from the snippet library
+- [x] Starring a snippet from no class context opens a class picker popover (lazy-loads current state, checkbox per class)
+- [x] Star icon reflects the current favorite status for the active class context
+- [x] Class detail page (`/classes/:id`) shows a "Snippets" section with class-favorited snippets
+- [x] Snippet library can be filtered to show only class-favorited snippets via `?classGroupId=`
+- [x] Removing a favorite removes only the class pointer — the snippet remains in the global library
 
 **Work Stream 2 — Plug-and-Play:**
 - [ ] "From your snippets" collapsible panel is present in the lesson planner

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLessonPlan, updateLessonPlan } from "@/lib/actions/lesson-plans";
-import { lessonPlanSchema } from "@/lib/ai/schemas";
+import {
+  lessonPlanSchema,
+  timelinePhaseSchema,
+  objectiveSchema,
+  materialSchema,
+} from "@/lib/ai/schemas";
+import { z } from "zod";
 
 export async function GET(
   _request: NextRequest,
@@ -27,8 +33,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Override array fields to drop the min(1) constraint — partial patches
+  // must be able to save empty arrays (e.g. deleting the last timeline phase).
   const patchSchema = lessonPlanSchema
     .partial()
+    .extend({
+      timeline: z.array(timelinePhaseSchema).optional(),
+      objectives: z.array(objectiveSchema).optional(),
+      materials: z.array(materialSchema).optional(),
+    })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",
     });

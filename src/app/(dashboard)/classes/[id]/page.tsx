@@ -6,6 +6,7 @@ import { getClassGroup } from "@/lib/actions/class-groups";
 import { getCurriculumTopics } from "@/lib/actions/curriculum";
 import { getDiaryEntries } from "@/lib/actions/diary";
 import { getLessonPlans } from "@/lib/actions/lesson-plans";
+import { getClassFavorites } from "@/lib/actions/snippets";
 import { notFound } from "next/navigation";
 import {
   BookOpen,
@@ -18,6 +19,7 @@ import {
   CheckCircle,
   Paperclip,
   MessageSquare,
+  Star,
 } from "lucide-react";
 import { CloseYearButton } from "./close-year-button";
 
@@ -28,12 +30,14 @@ export default async function ClassDetailPage({
 }) {
   const { id } = await params;
 
-  const [classGroup, topics, diaryEntries, lessonPlans] = await Promise.all([
-    getClassGroup(id),
-    getCurriculumTopics(id),
-    getDiaryEntries(id),
-    getLessonPlans(id),
-  ]);
+  const [classGroup, topics, diaryEntries, lessonPlans, snippetFavorites] =
+    await Promise.all([
+      getClassGroup(id),
+      getCurriculumTopics(id),
+      getDiaryEntries(id),
+      getLessonPlans(id),
+      getClassFavorites(id),
+    ]);
 
   if (!classGroup) notFound();
 
@@ -249,6 +253,65 @@ export default async function ClassDetailPage({
             </CardContent>
           </Card>
         </Link>
+      </div>
+
+      {/* Snippet favorites */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-semibold">Bausteine</h3>
+          <Link
+            href={`/snippets?classGroupId=${id}`}
+            className="text-xs text-primary hover:underline"
+          >
+            Alle anzeigen →
+          </Link>
+        </div>
+        {snippetFavorites.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+            <Star className="size-6 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              Noch keine Bausteine für diese Klasse.{" "}
+              <Link
+                href={`/snippets?classGroupId=${id}`}
+                className="text-primary hover:underline"
+              >
+                Zur Bibliothek
+              </Link>{" "}
+              und Bausteine mit dem Stern markieren.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {snippetFavorites.slice(0, 6).map((snippet) => (
+              <div
+                key={snippet.id}
+                className="flex items-start gap-3 rounded-lg border p-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      {snippet.phase}
+                    </Badge>
+                    {snippet.durationMinutes != null && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <Clock className="size-3" />
+                        {snippet.durationMinutes} Min.
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium line-clamp-1">
+                    {snippet.title}
+                  </p>
+                  {snippet.method && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {snippet.method}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Transition summary (archived classes only) */}
