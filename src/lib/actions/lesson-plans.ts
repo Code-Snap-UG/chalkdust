@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { lessonPlans, diaryEntries } from "@/lib/db/schema";
+import { lessonPlans, classGroups, diaryEntries } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { getCurrentTeacherId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { LessonPlanOutput } from "@/lib/ai/schemas";
 
@@ -125,5 +126,13 @@ export async function getLessonPlans(classGroupId?: string) {
       .where(eq(lessonPlans.classGroupId, classGroupId))
       .orderBy(desc(lessonPlans.createdAt));
   }
-  return db.select().from(lessonPlans).orderBy(desc(lessonPlans.createdAt));
+
+  const teacherId = await getCurrentTeacherId();
+  return db
+    .select({ lessonPlans })
+    .from(lessonPlans)
+    .innerJoin(classGroups, eq(lessonPlans.classGroupId, classGroups.id))
+    .where(eq(classGroups.teacherId, teacherId))
+    .orderBy(desc(lessonPlans.createdAt))
+    .then((rows) => rows.map((r) => r.lessonPlans));
 }

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { classGroups } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { saveCurriculum } from "@/lib/actions/curriculum";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
+import { getCurrentTeacherId } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") ?? "active";
 
+    const teacherId = await getCurrentTeacherId();
     const rows = await db
       .select()
       .from(classGroups)
-      .where(eq(classGroups.status, status))
+      .where(and(eq(classGroups.teacherId, teacherId), eq(classGroups.status, status)))
       .orderBy(desc(classGroups.createdAt));
 
     return NextResponse.json(rows);
@@ -40,10 +40,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const teacherId = await getCurrentTeacherId();
+
     const [created] = await db
       .insert(classGroups)
       .values({
-        teacherId: HARDCODED_TEACHER_ID,
+        teacherId,
         name,
         grade,
         subject,

@@ -5,8 +5,7 @@ import { planGenerationSystemPrompt } from "@/lib/ai/prompts/plan-generation";
 import { assembleContext } from "@/lib/ai/context";
 import { saveLessonPlan } from "@/lib/actions/lesson-plans";
 import { tracedGenerateObject } from "@/lib/ai/trace";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
+import { getCurrentTeacherId } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +43,7 @@ export async function POST(request: NextRequest) {
     const fullPrompt = [context, teacherInput].filter(Boolean).join("\n\n---\n\n");
     const userPrompt = `Erstelle einen Unterrichtsplan basierend auf folgendem Kontext:\n\n${fullPrompt}`;
 
+    const teacherId = await getCurrentTeacherId();
     const traceGroupId = crypto.randomUUID();
     const inputParams = {
       topicId,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     };
     const traceMeta = {
       agentMode: "plan_generation" as const,
-      teacherId: HARDCODED_TEACHER_ID,
+      teacherId,
       classGroupId,
       traceGroupId,
       inputParams,

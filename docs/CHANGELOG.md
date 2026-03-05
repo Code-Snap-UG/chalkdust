@@ -4,6 +4,12 @@ An append-only timeline of completed phases and significant milestones. Entries 
 
 ---
 
+## 2026-03-05 — Clerk Authentication (Phase 1.5)
+
+Added full Clerk authentication to the application. All `(dashboard)` routes are now protected — unauthenticated users are redirected to `/sign-in`. The `HARDCODED_TEACHER_ID` placeholder has been removed from all server actions and API routes and replaced with `getCurrentTeacherId()`, which resolves the authenticated Clerk user to an internal `teachers` row. A Clerk webhook auto-creates the teacher record on first sign-up. The `teachers` table gained a `clerk_user_id` column. Stripe subscription gating is deferred to Phase 2. See [`planning/phase-1.5/auth-implementation.md`](./planning/phase-1.5/auth-implementation.md).
+
+---
+
 ## 2026-03-05 — Class-Specific Snippet Favorites (Work Stream 1)
 
 Teachers can now mark snippets as favorites for specific classes. The snippet library gains a star toggle on every card — a direct toggle when in class context (`?classGroupId=`), or a lazy-loading popover with per-class checkboxes in the global view. The class detail page shows a "Bausteine" section with the class's favorited snippets and a link to the filtered library. No DB migrations were needed; `snippet_class_favorites` was already in the schema. See [`features/snippets.md`](./features/snippets.md) and [`planning/phase-0-1/phase-0-and-phase-1.md`](./planning/phase-0-1/phase-0-and-phase-1.md).

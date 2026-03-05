@@ -13,14 +13,13 @@ import { planRefinementSystemPrompt } from "@/lib/ai/prompts/plan-refinement";
 import { updateLessonPlan, getLessonPlan } from "@/lib/actions/lesson-plans";
 import { createTracedOnFinish } from "@/lib/ai/trace";
 import { AI_MOCK_ENABLED, MOCK_CHAT_RESPONSE } from "@/lib/ai/mocks";
+import { getCurrentTeacherId } from "@/lib/auth";
 import type {
   LessonPlanOutput,
   TimelinePhase,
   Objective,
   Material,
 } from "@/lib/ai/schemas";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function POST(request: Request) {
   const { messages, lessonPlanId }: { messages: UIMessage[]; lessonPlanId?: string } =
@@ -70,10 +69,12 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
   const systemPrompt = `${planRefinementSystemPrompt}\n\n${planContext}`;
   const startTime = Date.now();
 
+  const teacherId = await getCurrentTeacherId();
+
   const onFinish = createTracedOnFinish(
     {
       agentMode: "plan_refinement",
-      teacherId: HARDCODED_TEACHER_ID,
+      teacherId,
       classGroupId: currentPlan.classGroupId,
       lessonPlanId,
     },

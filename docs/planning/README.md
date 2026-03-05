@@ -9,6 +9,7 @@ This directory is the implementation backlog for Chalkdust — the bridge betwee
 | File | Covers | Status |
 |---|---|---|
 | [`phase-0-1/phase-0-and-phase-1.md`](./phase-0-1/phase-0-and-phase-1.md) | Foundation audit + complete snippet loop | Done |
+| [`phase-1.5/auth-implementation.md`](./phase-1.5/auth-implementation.md) | Clerk authentication — replace hardcoded teacher ID | Done |
 
 ---
 

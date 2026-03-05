@@ -9,8 +9,7 @@ import {
 } from "@/lib/ai/schemas";
 import { curriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
 import { tracedGenerateObject } from "@/lib/ai/trace";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
+import { getCurrentTeacherId } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +50,8 @@ export async function POST(request: NextRequest) {
     const truncatedText = parsedText.slice(0, 30000);
     const userPrompt = `Hier ist der Text des Kerncurriculums:\n\n${truncatedText}`;
 
+    const teacherId = await getCurrentTeacherId();
+
     const { object } = await tracedGenerateObject<CurriculumTopicExtraction>(
       {
         model: getModel("fast"),
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       },
       {
         agentMode: "curriculum_extraction",
-        teacherId: HARDCODED_TEACHER_ID,
+        teacherId,
         inputParams: { fileName: file.name, textLength: truncatedText.length },
       },
     );
