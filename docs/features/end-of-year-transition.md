@@ -1,5 +1,9 @@
 # End-of-Year Transition — Feature Architecture Document
 
+> **Status:** built
+> **Created:** 2026-03-04
+> **Updated:** 2026-03-05
+
 ## 1. Feature Summary
 
 When a school year ends, a teacher closes their class in Chalkdust through a structured **Close School Year** flow. The AI analyses the full class diary and generates a transition summary draft covering the year's overall progress, the class's documented strengths, and areas that will need reinforcement in the next year. The teacher reviews and edits the draft, then archives the class.

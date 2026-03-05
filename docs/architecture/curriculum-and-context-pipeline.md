@@ -1,5 +1,9 @@
 # Curriculum & Context Pipeline
 
+> **Status:** built
+> **Created:** 2026-02-26
+> **Updated:** 2026-03-05
+
 This document describes how an uploaded curriculum document is processed, stored, and ultimately used to inform AI-generated lesson plans.
 
 ---
