@@ -1,5 +1,9 @@
 # Lesson Snippets — Feature Architecture Document
 
+> **Status:** partial
+> **Created:** 2026-02-28
+> **Updated:** 2026-03-05
+
 ## 1. North Star Vision
 
 A teacher accumulates knowledge over years of practice. Some activities work brilliantly with one class, some games land perfectly for a particular age group, some warm-up routines are just reliable. Today, that knowledge lives only in the teacher's head. Chalkdust should be the place where it gets captured, organized, and reused.

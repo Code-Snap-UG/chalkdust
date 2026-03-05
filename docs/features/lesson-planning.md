@@ -1,5 +1,9 @@
 # AI-Assisted Lesson Planning -- Feature Architecture Document
 
+> **Status:** partial
+> **Created:** 2026-02-26
+> **Updated:** 2026-03-05
+
 ## 1. Feature Summary
 
 Chalkdust's core feature enables teachers to plan individual lessons with LLM assistance. The system uses three layers of context to generate high-quality, relevant lesson plans:
