@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, Suspense } from "react";
 import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -38,7 +38,7 @@ type ExtractedTopic = {
   competencyArea: string;
 };
 
-export default function NewClassWizard() {
+function NewClassWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
@@ -410,5 +410,13 @@ export default function NewClassWizard() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function NewClassPage() {
+  return (
+    <Suspense>
+      <NewClassWizard />
+    </Suspense>
   );
 }

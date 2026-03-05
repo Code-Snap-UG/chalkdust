@@ -8,12 +8,13 @@ import {
   jsonb,
   uuid,
   primaryKey,
+  AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const teachers = pgTable("teachers", {
   id: uuid("id").defaultRandom().primaryKey(),
-  clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+  clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -29,9 +30,7 @@ export const classGroups = pgTable("class_groups", {
   subject: varchar("subject", { length: 100 }).notNull(),
   schoolYear: varchar("school_year", { length: 20 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"),
-  predecessorId: uuid("predecessor_id").references(
-    (): ReturnType<typeof uuid> => classGroups.id
-  ),
+  predecessorId: uuid("predecessor_id").references((): AnyPgColumn => classGroups.id),
   transitionSummary: text("transition_summary"),
   transitionStrengths: text("transition_strengths"),
   transitionWeaknesses: text("transition_weaknesses"),
