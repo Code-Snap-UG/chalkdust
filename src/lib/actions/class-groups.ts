@@ -2,17 +2,17 @@
 
 import { db } from "@/lib/db";
 import { classGroups } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
+import { getCurrentTeacherId } from "@/lib/auth";
 
 export async function getClassGroups(status: string = "active") {
+  const teacherId = await getCurrentTeacherId();
   return db
     .select()
     .from(classGroups)
-    .where(eq(classGroups.status, status))
+    .where(and(eq(classGroups.teacherId, teacherId), eq(classGroups.status, status)))
     .orderBy(desc(classGroups.createdAt));
 }
 
@@ -34,10 +34,12 @@ export async function createClassGroup(
   const subject = formData.get("subject") as string;
   const schoolYear = formData.get("schoolYear") as string;
 
+  const teacherId = await getCurrentTeacherId();
+
   const [created] = await db
     .insert(classGroups)
     .values({
-      teacherId: HARDCODED_TEACHER_ID,
+      teacherId,
       name,
       grade,
       subject,

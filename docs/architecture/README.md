@@ -20,6 +20,7 @@ If a design decision is isolated to a single feature, document it in that featur
 
 | File | Covers |
 |---|---|
+| [`authentication.md`](./authentication.md) | Complete Clerk auth workflow: middleware route protection, `getCurrentTeacherId()` with all edge cases (fast path, provision path, email-match backfill, concurrent insert race, Clerk 404 on fresh sign-up), webhook teacher provisioning, and error surface. |
 | [`curriculum-and-context-pipeline.md`](./curriculum-and-context-pipeline.md) | Two-phase pipeline: PDF → curriculum topic extraction at upload time, and `assembleContext()` composing topic window + diary entries + transition summary per request. |
 
 ---

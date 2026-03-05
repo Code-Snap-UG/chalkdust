@@ -10,8 +10,7 @@ import {
   buildTransitionSummaryPrompt,
 } from "@/lib/ai/prompts/transition-summary";
 import { buildPlanSummary, isVagueSummary } from "@/lib/ai/context";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
+import { getCurrentTeacherId } from "@/lib/auth";
 
 export async function POST(
   _req: NextRequest,
@@ -99,6 +98,8 @@ export async function POST(
       diaryText
     );
 
+    const teacherId = await getCurrentTeacherId();
+
     const { object } = await tracedGenerateObject<{
       summary: string;
       strengths: string;
@@ -112,7 +113,7 @@ export async function POST(
       },
       {
         agentMode: "transition_summary",
-        teacherId: HARDCODED_TEACHER_ID,
+        teacherId,
         classGroupId,
         inputParams: { diaryEntryCount: taughtEntries.length },
       }

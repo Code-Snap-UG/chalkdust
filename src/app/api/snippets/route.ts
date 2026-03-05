@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSnippet, getSnippets } from "@/lib/actions/snippets";
+import { getCurrentTeacherId } from "@/lib/auth";
 import { z } from "zod";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 const createSnippetBodySchema = z.object({
   title: z.string().min(1),
@@ -20,7 +19,8 @@ export async function GET(request: NextRequest) {
   const tag = searchParams.get("tag") ?? undefined;
   const classGroupId = searchParams.get("classGroupId") ?? undefined;
 
-  const snippets = await getSnippets(HARDCODED_TEACHER_ID, { tag, classGroupId });
+  const teacherId = await getCurrentTeacherId();
+  const snippets = await getSnippets(teacherId, { tag, classGroupId });
   return NextResponse.json(snippets);
 }
 
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const snippet = await createSnippet(HARDCODED_TEACHER_ID, parsed.data);
+  const teacherId = await getCurrentTeacherId();
+  const snippet = await createSnippet(teacherId, parsed.data);
   return NextResponse.json(snippet, { status: 201 });
 }

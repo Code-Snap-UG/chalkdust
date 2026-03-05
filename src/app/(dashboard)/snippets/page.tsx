@@ -1,8 +1,7 @@
 import { getSnippets, getClassFavorites } from "@/lib/actions/snippets";
 import { getClassGroups } from "@/lib/actions/class-groups";
+import { getCurrentTeacherId } from "@/lib/auth";
 import { SnippetsClient } from "./snippets-client";
-
-const HARDCODED_TEACHER_ID = "00000000-0000-0000-0000-000000000001";
 
 export default async function SnippetsPage({
   searchParams,
@@ -10,9 +9,10 @@ export default async function SnippetsPage({
   searchParams: Promise<{ classGroupId?: string }>;
 }) {
   const { classGroupId } = await searchParams;
+  const teacherId = await getCurrentTeacherId();
 
   const [snippets, activeClasses, classFavorites] = await Promise.all([
-    getSnippets(HARDCODED_TEACHER_ID),
+    getSnippets(teacherId),
     getClassGroups("active"),
     classGroupId ? getClassFavorites(classGroupId) : Promise.resolve([]),
   ]);
