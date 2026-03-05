@@ -12,7 +12,7 @@ import { BookOpen, Clock, Sparkles, CheckCircle, FileEdit } from "lucide-react";
 import { getLessonPlans } from "@/lib/actions/lesson-plans";
 import { db } from "@/lib/db";
 import { classGroups } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 export default async function LessonPlansPage() {
   const plans = await getLessonPlans();
@@ -20,14 +20,13 @@ export default async function LessonPlansPage() {
   const classGroupIds = [...new Set(plans.map((p) => p.classGroupId))];
   const classGroupMap: Record<string, { name: string; subject: string; grade: string }> = {};
 
-  for (const cgId of classGroupIds) {
-    const [cg] = await db
+  if (classGroupIds.length > 0) {
+    const cgs = await db
       .select()
       .from(classGroups)
-      .where(eq(classGroups.id, cgId))
-      .limit(1);
-    if (cg) {
-      classGroupMap[cgId] = { name: cg.name, subject: cg.subject, grade: cg.grade };
+      .where(inArray(classGroups.id, classGroupIds));
+    for (const cg of cgs) {
+      classGroupMap[cg.id] = { name: cg.name, subject: cg.subject, grade: cg.grade };
     }
   }
 

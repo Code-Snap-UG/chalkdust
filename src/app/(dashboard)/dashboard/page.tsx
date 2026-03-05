@@ -28,8 +28,12 @@ export default async function DashboardPage() {
     getLessonPlans(),
   ]);
 
-  const approvedPlans = plans.filter((p) => p.status === "approved");
-  const draftPlans = plans.filter((p) => p.status === "draft");
+  const approvedPlans: typeof plans = [];
+  const draftPlans: typeof plans = [];
+  for (const p of plans) {
+    if (p.status === "approved") approvedPlans.push(p);
+    else if (p.status === "draft") draftPlans.push(p);
+  }
   const totalMinutes = approvedPlans.reduce(
     (sum, p) => sum + (p.durationMinutes || 0),
     0

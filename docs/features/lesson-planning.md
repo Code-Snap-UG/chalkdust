@@ -923,3 +923,57 @@ function snippetToPhase(snippet: LessonSnippet): TimelinePhase {
 | File | Purpose |
 |------|---------|
 | `snippet-drawer.tsx` | Sheet overlay — fetch, search, filter, insert snippets into timeline |
+
+---
+
+## 11. Manual (Blank) Plan Creation (implemented March 2026)
+
+Teachers can now create a lesson plan from scratch without AI involvement. The blank plan path reuses the existing `LessonPlanDetailClient` and Phase 1 section components — all empty-state handling was already in place.
+
+### Entry point
+
+A **"Manuell erstellen"** button (`PencilLine` icon, outline style) was added to the class dashboard (`/classes/[id]`) in two places:
+
+1. The header action group alongside the existing "Stunde planen" button
+2. A quick-link card in the grid section (sibling to "Stunde planen")
+
+Both are hidden for archived classes.
+
+### Setup form
+
+Route: `/classes/[id]/plan/blank`
+
+A server component (`page.tsx`) checks the class exists and is not archived, then renders a client form (`blank-plan-form.tsx`) with three fields:
+
+| Field | Type | Required |
+|-------|------|----------|
+| Topic (`Thema`) | Text input | Yes |
+| Date (`Datum`) | Date input | No |
+| Duration (`Dauer`) | Select: 45 / 60 / 90 / 120 min | No (default 45) |
+
+On submit the form calls `createBlankLessonPlan` (server action in `src/lib/actions/lesson-plans.ts`), which inserts a draft record with empty `objectives`, `timeline`, `materials`, `differentiation`, and `null` homework. The teacher is then redirected to `/lesson-plans/[id]`.
+
+### Editing surface
+
+No new editing components were needed. The existing `LessonPlanDetailClient` and its five section components (Lernziele, Stundenablauf, Materialien, Differenzierung, Hausaufgaben) handle empty arrays as first-class state — each renders an appropriate add-item prompt (e.g., "Noch keine Phasen — füge deine erste hinzu.").
+
+### Screen map addition
+
+```mermaid
+flowchart LR
+    ClassDetail["Class Detail\n/classes/:id"] -->|"Manuell erstellen"| BlankForm["Blank Form\n/classes/:id/plan/blank"]
+    BlankForm --> PlanDetail["Plan Detail\n/lesson-plans/:id"]
+    ClassDetail -->|"Stunde planen (AI)"| PlanLesson["/classes/:id/plan"]
+    PlanLesson --> PlanDetail
+```
+
+### New files
+
+| File | Purpose |
+|------|---------|
+| `src/app/(dashboard)/classes/[id]/plan/blank/page.tsx` | Server wrapper — class check + archived redirect, renders form |
+| `src/app/(dashboard)/classes/[id]/plan/blank/blank-plan-form.tsx` | Client form — topic / date / duration, calls server action |
+
+### New server action
+
+`createBlankLessonPlan` in `src/lib/actions/lesson-plans.ts` — inserts a draft `lessonPlans` row with the provided topic/date/duration and empty content fields, revalidates `/classes/[classGroupId]`.

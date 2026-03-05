@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import useSWR from "swr";
 import { useParams, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -79,27 +80,25 @@ export default function PlanLessonPage() {
   const [learningGoals, setLearningGoals] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
 
-  // Curriculum topics
-  const [curriculumTopics, setCurriculumTopics] = useState<CurriculumTopic[]>(
-    []
+  const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+  const { data: classData } = useSWR<{ status?: string }>(
+    `/api/classes/${classGroupId}`,
+    fetcher
+  );
+  const { data: topicsData } = useSWR<{ topics?: CurriculumTopic[] }>(
+    `/api/classes/${classGroupId}/topics`,
+    fetcher
   );
 
-  useEffect(() => {
-    // Redirect to class overview if the class is archived
-    fetch(`/api/classes/${classGroupId}`)
-      .then((r) => r.json())
-      .then((data: { status?: string }) => {
-        if (data.status === "archived") {
-          router.replace(`/classes/${classGroupId}`);
-        }
-      })
-      .catch(() => {});
+  const curriculumTopics = topicsData?.topics ?? [];
 
-    fetch(`/api/classes/${classGroupId}/topics`)
-      .then((r) => r.json())
-      .then((data) => setCurriculumTopics(data.topics || []))
-      .catch(() => {});
-  }, [classGroupId, router]);
+  // Redirect if the class is archived
+  useEffect(() => {
+    if (classData?.status === "archived") {
+      router.replace(`/classes/${classGroupId}`);
+    }
+  }, [classData, classGroupId, router]);
 
   const [chatInput, setChatInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);

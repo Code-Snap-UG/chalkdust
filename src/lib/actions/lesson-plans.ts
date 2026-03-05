@@ -82,6 +82,32 @@ export async function approveLessonPlan(id: string) {
   return plan;
 }
 
+export async function createBlankLessonPlan(
+  classGroupId: string,
+  topic: string,
+  lessonDate?: string,
+  durationMinutes?: number
+) {
+  const [created] = await db
+    .insert(lessonPlans)
+    .values({
+      classGroupId,
+      topic,
+      lessonDate: lessonDate || null,
+      durationMinutes: durationMinutes || 45,
+      status: "draft",
+      objectives: [],
+      timeline: [],
+      differentiation: { weaker: "", stronger: "" },
+      materials: [],
+      homework: null,
+    })
+    .returning();
+
+  revalidatePath(`/classes/${classGroupId}`);
+  return created;
+}
+
 export async function getLessonPlan(id: string) {
   const rows = await db
     .select()

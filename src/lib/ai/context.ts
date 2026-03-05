@@ -148,20 +148,55 @@ export async function assembleContext(
 ) {
   const parts: string[] = [];
 
-  // Curriculum excerpt
-  const [curriculum] = await db
-    .select()
-    .from(curricula)
-    .where(eq(curricula.classGroupId, classGroupId))
-    .limit(1);
-
-  if (curriculum) {
-    const topics = await db
+  // curriculum, recentDiary, and classGroup are all independent — fetch in parallel
+  const [curriculumResult, recentDiary, classGroupResult] = await Promise.all([
+    db
       .select()
-      .from(curriculumTopics)
-      .where(eq(curriculumTopics.curriculumId, curriculum.id))
-      .orderBy(curriculumTopics.sortOrder);
+      .from(curricula)
+      .where(eq(curricula.classGroupId, classGroupId))
+      .limit(1),
+    db
+      .select({
+        diary: diaryEntries,
+        plan: lessonPlans,
+      })
+      .from(diaryEntries)
+      .leftJoin(lessonPlans, eq(diaryEntries.lessonPlanId, lessonPlans.id))
+      .where(eq(diaryEntries.classGroupId, classGroupId))
+      .orderBy(desc(diaryEntries.entryDate))
+      .limit(15),
+    db
+      .select()
+      .from(classGroups)
+      .where(eq(classGroups.id, classGroupId))
+      .limit(1),
+  ]);
 
+  const curriculum = curriculumResult[0];
+  const classGroup = classGroupResult[0];
+
+  // topics depends on curriculum; predecessor depends on classGroup — fetch in parallel
+  const [topics, predecessorResult] = await Promise.all([
+    curriculum
+      ? db
+          .select()
+          .from(curriculumTopics)
+          .where(eq(curriculumTopics.curriculumId, curriculum.id))
+          .orderBy(curriculumTopics.sortOrder)
+      : Promise.resolve([]),
+    classGroup?.predecessorId
+      ? db
+          .select()
+          .from(classGroups)
+          .where(eq(classGroups.id, classGroup.predecessorId))
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
+
+  const predecessor = predecessorResult[0];
+
+  // Build curriculum section
+  if (curriculum && topics.length > 0) {
     if (selectedTopicId) {
       const idx = topics.findIndex((t) => t.id === selectedTopicId);
       const start = Math.max(0, idx - 1);
@@ -176,7 +211,7 @@ export async function assembleContext(
           )
           .join("\n")}`
       );
-    } else if (topics.length > 0) {
+    } else {
       parts.push(
         `## Kerncurriculum (Themenübersicht)\n\n${topics
           .map(
@@ -188,24 +223,16 @@ export async function assembleContext(
     }
   }
 
-  // Diary entries with linked lesson plans (LEFT JOIN)
-  const recentDiary = await db
-    .select({
-      diary: diaryEntries,
-      plan: lessonPlans,
-    })
-    .from(diaryEntries)
-    .leftJoin(lessonPlans, eq(diaryEntries.lessonPlanId, lessonPlans.id))
-    .where(eq(diaryEntries.classGroupId, classGroupId))
-    .orderBy(desc(diaryEntries.entryDate))
-    .limit(15);
-
-  const taught = recentDiary.filter(
-    (r) => r.diary.progressStatus !== "planned"
-  );
-  const planned = recentDiary.filter(
-    (r) => r.diary.progressStatus === "planned"
-  );
+  // Partition diary entries in a single pass
+  const taught: typeof recentDiary = [];
+  const planned: typeof recentDiary = [];
+  for (const r of recentDiary) {
+    if (r.diary.progressStatus === "planned") {
+      planned.push(r);
+    } else {
+      taught.push(r);
+    }
+  }
 
   if (taught.length > 0) {
     parts.push(
@@ -226,33 +253,19 @@ export async function assembleContext(
   }
 
   // Predecessor transition summary
-  const [classGroup] = await db
-    .select()
-    .from(classGroups)
-    .where(eq(classGroups.id, classGroupId))
-    .limit(1);
-
-  if (classGroup?.predecessorId) {
-    const [predecessor] = await db
-      .select()
-      .from(classGroups)
-      .where(eq(classGroups.id, classGroup.predecessorId))
-      .limit(1);
-
-    if (predecessor?.transitionStrengths || predecessor?.transitionWeaknesses) {
-      parts.push(
-        `## Vorjahr – Übergangsinformationen\n\n` +
-          (predecessor.transitionStrengths
-            ? `**Stärken:** ${predecessor.transitionStrengths}\n`
-            : "") +
-          (predecessor.transitionWeaknesses
-            ? `**Schwächen:** ${predecessor.transitionWeaknesses}\n`
-            : "") +
-          (predecessor.transitionSummary
-            ? `**Zusammenfassung:** ${predecessor.transitionSummary}`
-            : "")
-      );
-    }
+  if (predecessor?.transitionStrengths || predecessor?.transitionWeaknesses) {
+    parts.push(
+      `## Vorjahr – Übergangsinformationen\n\n` +
+        (predecessor.transitionStrengths
+          ? `**Stärken:** ${predecessor.transitionStrengths}\n`
+          : "") +
+        (predecessor.transitionWeaknesses
+          ? `**Schwächen:** ${predecessor.transitionWeaknesses}\n`
+          : "") +
+        (predecessor.transitionSummary
+          ? `**Zusammenfassung:** ${predecessor.transitionSummary}`
+          : "")
+    );
   }
 
   return parts.join("\n\n---\n\n");

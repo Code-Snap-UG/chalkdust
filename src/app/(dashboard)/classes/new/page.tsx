@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useTransition } from "react";
+import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -41,7 +42,7 @@ export default function NewClassWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   // Step 1 data — initialised from URL search params when navigating from the archive flow
   const [name, setName] = useState(() => searchParams.get("name") ?? "");
@@ -49,52 +50,46 @@ export default function NewClassWizard() {
   const [subject, setSubject] = useState(() => searchParams.get("subject") ?? "");
   const [schoolYear, setSchoolYear] = useState(() => searchParams.get("schoolYear") ?? "");
   const [predecessorId, setPredecessorId] = useState(() => searchParams.get("predecessorId") ?? "");
-  const [archivedClasses, setArchivedClasses] = useState<ArchivedClass[]>([]);
 
-  useEffect(() => {
-    fetch("/api/classes?status=archived")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setArchivedClasses(data);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: archivedClasses = [] } = useSWR<ArchivedClass[]>(
+    "/api/classes?status=archived",
+    (url: string) => fetch(url).then((r) => r.json())
+  );
 
   // Step 2 data
   const [fileName, setFileName] = useState("");
   const [parsedContent, setParsedContent] = useState("");
   const [topics, setTopics] = useState<ExtractedTopic[]>([]);
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    startTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const res = await fetch("/api/curriculum/upload", {
-        method: "POST",
-        body: formData,
-      });
+        const res = await fetch("/api/curriculum/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!res.ok) {
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error || "Fehler beim Hochladen");
+          return;
+        }
+
         const data = await res.json();
-        alert(data.error || "Fehler beim Hochladen");
-        return;
+        setFileName(data.fileName);
+        setParsedContent(data.parsedContent);
+        setTopics(data.topics);
+        setStep(3);
+      } catch {
+        alert("Fehler beim Hochladen der Datei.");
       }
-
-      const data = await res.json();
-      setFileName(data.fileName);
-      setParsedContent(data.parsedContent);
-      setTopics(data.topics);
-      setStep(3);
-    } catch {
-      alert("Fehler beim Hochladen der Datei.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   function updateTopic(
@@ -128,46 +123,39 @@ export default function NewClassWizard() {
     });
   }
 
-  async function handleFinish() {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("grade", grade);
-      formData.append("subject", subject);
-      formData.append("schoolYear", schoolYear);
-
-      const res = await fetch("/api/classes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          grade,
-          subject,
-          schoolYear,
-          predecessorId: predecessorId || undefined,
-          curriculum: {
-            subject,
+  function handleFinish() {
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/classes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
             grade,
-            sourceFileName: fileName,
-            parsedContent,
-            topics,
-          },
-        }),
-      });
+            subject,
+            schoolYear,
+            predecessorId: predecessorId || undefined,
+            curriculum: {
+              subject,
+              grade,
+              sourceFileName: fileName,
+              parsedContent,
+              topics,
+            },
+          }),
+        });
 
-      if (!res.ok) {
+        if (!res.ok) {
+          alert("Fehler beim Erstellen der Klasse.");
+          return;
+        }
+
+        const data = await res.json();
+        router.push(`/classes/${data.id}`);
+      } catch {
         alert("Fehler beim Erstellen der Klasse.");
-        return;
       }
-
-      const data = await res.json();
-      router.push(`/classes/${data.id}`);
-    } catch {
-      alert("Fehler beim Erstellen der Klasse.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   return (
@@ -299,7 +287,7 @@ export default function NewClassWizard() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8">
-              {loading ? (
+              {isPending ? (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="size-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground">
@@ -407,10 +395,10 @@ export default function NewClassWizard() {
               </Button>
               <Button
                 onClick={handleFinish}
-                disabled={loading}
+                disabled={isPending}
                 className="flex-1"
               >
-                {loading ? (
+                {isPending ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
                   <Check className="mr-2 size-4" />
