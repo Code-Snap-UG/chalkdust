@@ -4,6 +4,12 @@ An append-only timeline of completed phases and significant milestones. Entries 
 
 ---
 
+## 2026-03-05 — Class-Specific Snippet Favorites (Work Stream 1)
+
+Teachers can now mark snippets as favorites for specific classes. The snippet library gains a star toggle on every card — a direct toggle when in class context (`?classGroupId=`), or a lazy-loading popover with per-class checkboxes in the global view. The class detail page shows a "Bausteine" section with the class's favorited snippets and a link to the filtered library. No DB migrations were needed; `snippet_class_favorites` was already in the schema. See [`features/snippets.md`](./features/snippets.md) and [`planning/phase-0-1/phase-0-and-phase-1.md`](./planning/phase-0-1/phase-0-and-phase-1.md).
+
+---
+
 ## 2026-03-05 — Manual Lesson Plan Creation
 
 Added the ability for teachers to create lesson plans from scratch without AI assistance. The class dashboard now offers explicit "Create with AI" and "Create manually" entry points. Blank plans use the same block structure as AI-generated ones.

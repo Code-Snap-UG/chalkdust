@@ -18,8 +18,9 @@ const createSnippetBodySchema = z.object({
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const tag = searchParams.get("tag") ?? undefined;
+  const classGroupId = searchParams.get("classGroupId") ?? undefined;
 
-  const snippets = await getSnippets(HARDCODED_TEACHER_ID, { tag });
+  const snippets = await getSnippets(HARDCODED_TEACHER_ID, { tag, classGroupId });
   return NextResponse.json(snippets);
 }
 
