@@ -14,7 +14,8 @@ docs/
 ├── CHANGELOG.md       — completion timeline (append-only, newest-first)
 ├── architecture/      — cross-cutting technical systems
 ├── features/          — current state of every built feature
-└── planning/          — forward-looking backlog (phase plans)
+├── planning/          — forward-looking backlog (phase plans)
+└── graveyard/         — features designed but deliberately not built
 ```
 
 ## Decision: which directory?
@@ -26,6 +27,7 @@ docs/
 | A data pipeline, infra pattern, cross-feature system | `architecture/` |
 | A built or partially-built feature (current state) | `features/` |
 | A new phase plan / backlog item | `planning/` |
+| A feature deliberately deferred or dropped | `graveyard/` |
 
 ## Front-matter (required on all feature + architecture docs)
 
@@ -61,6 +63,15 @@ Always update the `Updated` date when editing a doc.
 1. Create `docs/planning/<phase-name>/` directory with a plan file inside
 2. Structure: goal summary → work streams → cross-cutting concerns → success criteria (checkboxes)
 3. Add a row to `docs/planning/README.md` active plans table with status `Active`
+
+## Moving a feature to the graveyard
+
+When a feature is deliberately deferred or dropped:
+
+1. Create `docs/graveyard/<feature-name>.md` using the template in `docs/graveyard/README.md`
+2. Add a row to `docs/graveyard/README.md` index table
+3. In the source planning doc, replace the feature's full section with a one-line note: `> **WILL NOT IMPLEMENT** — Moved to [graveyard](../../graveyard/<feature-name>.md). <One-sentence reason>.`
+4. Update any status table rows in the planning doc from `NOT BUILT` → `WILL NOT IMPLEMENT`
 
 ## CHANGELOG entry format
 

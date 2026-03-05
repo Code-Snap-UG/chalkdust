@@ -13,6 +13,7 @@ This directory is the single source of truth for everything about how Chalkdust 
 | [`architecture/`](./architecture/) | Cross-cutting technical architecture: data flows, pipelines, infrastructure decisions. Not feature-specific. |
 | [`features/`](./features/) | Current state of every built feature — domain model, UX flow, API contracts, design decisions. Future sections are clearly labeled `### Roadmap`. |
 | [`planning/`](./planning/) | Forward-looking backlog. Each file is a phase plan with checkboxes. When a phase completes, it gets a `CHANGELOG.md` entry. |
+| [`graveyard/`](./graveyard/) | Features that were designed and then decided against — preserved for future reference. |
 
 ---
 
@@ -47,9 +48,11 @@ Entries are listed newest-first.
 
 ```
 active → done → CHANGELOG entry added
+         ↓ (if deferred/dropped)
+      graveyard/
 ```
 
-See [`planning/README.md`](./planning/README.md) for full lifecycle conventions.
+See [`planning/README.md`](./planning/README.md) for full lifecycle conventions. See [`graveyard/README.md`](./graveyard/README.md) for how features are moved there.
 
 ---
 

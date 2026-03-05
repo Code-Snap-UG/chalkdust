@@ -8,7 +8,7 @@ This directory is the implementation backlog for Chalkdust — the bridge betwee
 
 | File | Covers | Status |
 |---|---|---|
-| [`phase-0-1/phase-0-and-phase-1.md`](./phase-0-1/phase-0-and-phase-1.md) | Foundation audit + complete snippet loop | Active |
+| [`phase-0-1/phase-0-and-phase-1.md`](./phase-0-1/phase-0-and-phase-1.md) | Foundation audit + complete snippet loop | Done |
 
 ---
 
@@ -25,6 +25,8 @@ This directory is the implementation backlog for Chalkdust — the bridge betwee
 
 ```
 active → done → CHANGELOG entry added
+         ↓ (if deferred/dropped)
+      graveyard/
 ```
 
 When a plan is complete:
@@ -33,6 +35,7 @@ When a plan is complete:
 2. Add an entry to [`../CHANGELOG.md`](../CHANGELOG.md) summarising what was shipped. Link back to the plan file.
 3. Update the status in the table above.
 4. If there are carry-forward items, either add them as a section at the bottom of the completed plan file or create a new plan file for the next phase.
+5. If a feature within a plan is deliberately deferred or dropped, mark it `WILL NOT IMPLEMENT` in the plan, extract the full design to [`../graveyard/`](../graveyard/), and add a row to `../graveyard/README.md`.
 
 ---
 
