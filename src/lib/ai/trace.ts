@@ -1,7 +1,7 @@
 import {
-  generateObject,
+  generateText,
   streamText,
-  type GenerateObjectResult,
+  Output,
   type LanguageModelUsage,
 } from "ai";
 import { db } from "@/lib/db";
@@ -82,10 +82,16 @@ async function saveTrace(row: TraceRow) {
   });
 }
 
+type GenerateObjectOptions = Omit<Parameters<typeof generateText>[0], "output"> & {
+  schema: Parameters<typeof Output.object>[0]["schema"];
+};
+
 export async function tracedGenerateObject<RESULT>(
-  generateOptions: Parameters<typeof generateObject>[0],
+  generateOptions: GenerateObjectOptions,
   traceMetadata: TraceMetadata,
-): Promise<GenerateObjectResult<RESULT>> {
+): Promise<{ object: RESULT }> {
+  const { schema, ...textOptions } = generateOptions;
+
   if (AI_MOCK_ENABLED) {
     const object = getMockObject(traceMetadata.agentMode) as RESULT;
     saveTrace({
@@ -105,12 +111,15 @@ export async function tracedGenerateObject<RESULT>(
       finishReason: "stop",
       status: "success",
     }).catch(console.error);
-    return { object } as unknown as GenerateObjectResult<RESULT>;
+    return { object };
   }
 
   const start = Date.now();
   try {
-    const result = await generateObject(generateOptions);
+    const result = await generateText({
+      ...(textOptions as Parameters<typeof generateText>[0]),
+      output: Output.object({ schema }),
+    });
     const durationMs = Date.now() - start;
     const tokens = extractTokens(result.usage);
 
@@ -126,14 +135,14 @@ export async function tracedGenerateObject<RESULT>(
         typeof generateOptions.prompt === "string"
           ? generateOptions.prompt
           : undefined,
-      output: result.object as unknown,
+      output: result.output as unknown,
       ...tokens,
       durationMs,
       finishReason: result.finishReason,
       status: "success",
     }).catch(console.error);
 
-    return result as GenerateObjectResult<RESULT>;
+    return { object: result.output as RESULT };
   } catch (error) {
     const durationMs = Date.now() - start;
     saveTrace({
