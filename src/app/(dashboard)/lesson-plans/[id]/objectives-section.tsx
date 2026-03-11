@@ -197,7 +197,7 @@ export function ObjectivesSection({
               <li key={i} className="group flex items-start gap-2 text-sm">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
                 <span className="flex-1">{obj.text}</span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"

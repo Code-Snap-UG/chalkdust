@@ -41,6 +41,8 @@ export async function PATCH(
       timeline: z.array(timelinePhaseSchema).optional(),
       objectives: z.array(objectiveSchema).optional(),
       materials: z.array(materialSchema).optional(),
+      lessonDate: z.string().nullable().optional(),
+      durationMinutes: z.number().int().positive().optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",

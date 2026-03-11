@@ -37,6 +37,8 @@ export async function updateLessonPlan(
   id: string,
   updates: Partial<{
     topic: string;
+    lessonDate: string | null;
+    durationMinutes: number;
     objectives: LessonPlanOutput["objectives"];
     timeline: LessonPlanOutput["timeline"];
     differentiation: LessonPlanOutput["differentiation"];
