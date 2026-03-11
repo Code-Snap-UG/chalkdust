@@ -336,7 +336,7 @@ export function MaterialsSection({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 shrink-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="size-6 shrink-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
                   onClick={() => handleEdit(i)}
                   title="Bearbeiten"
                 >
