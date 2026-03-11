@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   Bookmark,
   BookOpen,
-  Calendar,
   GraduationCap,
   LayoutDashboard,
-  Sparkles,
   Settings,
   HelpCircle,
   Users,
@@ -39,14 +37,14 @@ import { ChevronsUpDown, LogOut, User } from "lucide-react";
 
 const navItems = [
   {
-    label: "Meine Klassen",
-    href: "/classes",
-    icon: Users,
-  },
-  {
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Meine Klassen",
+    href: "/classes",
+    icon: Users,
   },
   {
     label: "Unterrichtspläne",
@@ -57,16 +55,6 @@ const navItems = [
     label: "Bausteine",
     href: "/snippets",
     icon: Bookmark,
-  },
-  {
-    label: "Kalender",
-    href: "/calendar",
-    icon: Calendar,
-  },
-  {
-    label: "KI-Assistent",
-    href: "/ai-assistant",
-    icon: Sparkles,
   },
 ];
 
