@@ -3,11 +3,16 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { teachers } from "@/lib/db/schema";
+import { log } from "@/lib/logger";
 
 export async function POST(req: Request) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
+    log.error("webhook.clerk", {
+      error: new Error("CLERK_WEBHOOK_SECRET not set"),
+      expected: "Environment variable should be configured",
+    });
     return new Response("CLERK_WEBHOOK_SECRET not set", { status: 500 });
   }
 
@@ -32,7 +37,11 @@ export async function POST(req: Request) {
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
     }) as WebhookEvent;
-  } catch {
+  } catch (error) {
+    log.error("webhook.clerk.verify", {
+      error,
+      expected: "Valid webhook signature",
+    });
     return new Response("Invalid webhook signature", { status: 400 });
   }
 

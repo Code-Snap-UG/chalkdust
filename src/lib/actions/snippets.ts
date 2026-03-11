@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { lessonSnippets, snippetClassFavorites } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 export type CreateSnippetInput = {
   title: string;
@@ -19,22 +20,30 @@ export async function createSnippet(
   teacherId: string,
   data: CreateSnippetInput
 ) {
-  const [created] = await db
-    .insert(lessonSnippets)
-    .values({
-      teacherId,
-      title: data.title,
-      phase: data.phase,
-      durationMinutes: data.durationMinutes ?? null,
-      description: data.description,
-      method: data.method ?? null,
-      tags: data.tags ?? [],
-      notes: data.notes ?? null,
-      sourceLessonPlanId: data.sourceLessonPlanId ?? null,
-    })
-    .returning();
+  try {
+    const [created] = await db
+      .insert(lessonSnippets)
+      .values({
+        teacherId,
+        title: data.title,
+        phase: data.phase,
+        durationMinutes: data.durationMinutes ?? null,
+        description: data.description,
+        method: data.method ?? null,
+        tags: data.tags ?? [],
+        notes: data.notes ?? null,
+        sourceLessonPlanId: data.sourceLessonPlanId ?? null,
+      })
+      .returning();
 
-  return created;
+    return created;
+  } catch (error) {
+    log.error("action.snippets.create", {
+      input: { teacherId, title: data.title },
+      error,
+    });
+    throw error;
+  }
 }
 
 export async function getSnippets(

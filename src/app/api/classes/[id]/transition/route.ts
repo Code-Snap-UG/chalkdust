@@ -11,14 +11,13 @@ import {
 } from "@/lib/ai/prompts/transition-summary";
 import { buildPlanSummary, isVagueSummary } from "@/lib/ai/context";
 import { getCurrentTeacherId } from "@/lib/auth";
+import { withLogging } from "@/lib/logger";
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: classGroupId } = await params;
+export const POST = withLogging(
+  "api.transition.generate",
+  async (_req, { params }) => {
+    const { id: classGroupId } = await params;
 
-  try {
     const [classGroup] = await db
       .select()
       .from(classGroups)
@@ -39,7 +38,6 @@ export async function POST(
       );
     }
 
-    // Fetch all taught diary entries with linked lesson plans
     const diaryRows = await db
       .select({ diary: diaryEntries, plan: lessonPlans })
       .from(diaryEntries)
@@ -51,7 +49,6 @@ export async function POST(
       (r) => r.diary.progressStatus !== "planned"
     );
 
-    // Serialize diary entries for the prompt
     const diaryText =
       taughtEntries.length > 0
         ? taughtEntries
@@ -120,22 +117,14 @@ export async function POST(
     );
 
     return NextResponse.json(object);
-  } catch (error) {
-    console.error("Transition summary generation error:", error);
-    return NextResponse.json(
-      { error: "Fehler bei der KI-Generierung. Bitte versuche es erneut." },
-      { status: 500 }
-    );
-  }
-}
+  },
+  "Fehler bei der KI-Generierung. Bitte versuche es erneut.",
+);
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: classGroupId } = await params;
-
-  try {
+export const PATCH = withLogging(
+  "api.transition.archive",
+  async (req, { params }) => {
+    const { id: classGroupId } = await params;
     const { summary, strengths, weaknesses } = await req.json();
 
     if (!summary?.trim() || !strengths?.trim() || !weaknesses?.trim()) {
@@ -177,11 +166,6 @@ export async function PATCH(
       .where(eq(classGroups.id, classGroupId));
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error("Transition archive error:", error);
-    return NextResponse.json(
-      { error: "Beim Archivieren ist ein Fehler aufgetreten." },
-      { status: 500 }
-    );
-  }
-}
+  },
+  "Beim Archivieren ist ein Fehler aufgetreten.",
+);

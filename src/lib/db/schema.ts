@@ -229,6 +229,22 @@ export const snippetClassFavorites = pgTable(
   (t) => [primaryKey({ columns: [t.snippetId, t.classGroupId] })]
 );
 
+// Application Logs
+
+export const appLogs = pgTable("app_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  level: varchar("level", { length: 20 }).notNull(),
+  operation: varchar("operation", { length: 255 }).notNull(),
+  input: jsonb("input"),
+  output: jsonb("output"),
+  expected: text("expected"),
+  errorMessage: text("error_message"),
+  errorStack: text("error_stack"),
+  metadata: jsonb("metadata"),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // AI Trace Observability
 
 export const aiTraces = pgTable("ai_traces", {

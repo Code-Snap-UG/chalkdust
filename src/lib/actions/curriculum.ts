@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { curricula, curriculumTopics } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { log } from "@/lib/logger";
 
 export async function saveCurriculum(
   classGroupId: string,
@@ -19,46 +20,54 @@ export async function saveCurriculum(
     }[];
   }
 ) {
-  const [curriculum] = await db
-    .insert(curricula)
-    .values({
-      classGroupId,
-      subject: data.subject,
-      grade: data.grade,
-      sourceFileName: data.sourceFileName,
-      parsedContent: data.parsedContent,
-      topicIndex: data.topics,
-    })
-    .onConflictDoUpdate({
-      target: curricula.classGroupId,
-      set: {
+  try {
+    const [curriculum] = await db
+      .insert(curricula)
+      .values({
+        classGroupId,
         subject: data.subject,
         grade: data.grade,
         sourceFileName: data.sourceFileName,
         parsedContent: data.parsedContent,
         topicIndex: data.topics,
-      },
-    })
-    .returning();
+      })
+      .onConflictDoUpdate({
+        target: curricula.classGroupId,
+        set: {
+          subject: data.subject,
+          grade: data.grade,
+          sourceFileName: data.sourceFileName,
+          parsedContent: data.parsedContent,
+          topicIndex: data.topics,
+        },
+      })
+      .returning();
 
-  await db
-    .delete(curriculumTopics)
-    .where(eq(curriculumTopics.curriculumId, curriculum.id));
+    await db
+      .delete(curriculumTopics)
+      .where(eq(curriculumTopics.curriculumId, curriculum.id));
 
-  if (data.topics.length > 0) {
-    await db.insert(curriculumTopics).values(
-      data.topics.map((topic, index) => ({
-        curriculumId: curriculum.id,
-        title: topic.title,
-        description: topic.description,
-        competencyArea: topic.competencyArea,
-        sortOrder: index,
-      }))
-    );
+    if (data.topics.length > 0) {
+      await db.insert(curriculumTopics).values(
+        data.topics.map((topic, index) => ({
+          curriculumId: curriculum.id,
+          title: topic.title,
+          description: topic.description,
+          competencyArea: topic.competencyArea,
+          sortOrder: index,
+        }))
+      );
+    }
+
+    revalidatePath(`/classes/${classGroupId}`);
+    return curriculum;
+  } catch (error) {
+    log.error("action.curriculum.save", {
+      input: { classGroupId, subject: data.subject, topicCount: data.topics.length },
+      error,
+    });
+    throw error;
   }
-
-  revalidatePath(`/classes/${classGroupId}`);
-  return curriculum;
 }
 
 export async function getCurriculum(classGroupId: string) {

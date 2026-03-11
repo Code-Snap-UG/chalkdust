@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { getCurrentTeacherId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { LessonPlanOutput } from "@/lib/ai/schemas";
+import { log } from "@/lib/logger";
 
 export async function saveLessonPlan(
   classGroupId: string,
@@ -13,24 +14,32 @@ export async function saveLessonPlan(
   lessonDate?: string,
   durationMinutes?: number
 ) {
-  const [created] = await db
-    .insert(lessonPlans)
-    .values({
-      classGroupId,
-      lessonDate: lessonDate || null,
-      durationMinutes: durationMinutes || 45,
-      status: "draft",
-      topic: plan.topic,
-      objectives: plan.objectives,
-      timeline: plan.timeline,
-      differentiation: plan.differentiation,
-      materials: plan.materials,
-      homework: plan.homework || null,
-    })
-    .returning();
+  try {
+    const [created] = await db
+      .insert(lessonPlans)
+      .values({
+        classGroupId,
+        lessonDate: lessonDate || null,
+        durationMinutes: durationMinutes || 45,
+        status: "draft",
+        topic: plan.topic,
+        objectives: plan.objectives,
+        timeline: plan.timeline,
+        differentiation: plan.differentiation,
+        materials: plan.materials,
+        homework: plan.homework || null,
+      })
+      .returning();
 
-  revalidatePath(`/classes/${classGroupId}`);
-  return created;
+    revalidatePath(`/classes/${classGroupId}`);
+    return created;
+  } catch (error) {
+    log.error("action.lesson-plans.save", {
+      input: { classGroupId, topic: plan.topic, lessonDate, durationMinutes },
+      error,
+    });
+    throw error;
+  }
 }
 
 export async function updateLessonPlan(
@@ -57,32 +66,37 @@ export async function updateLessonPlan(
 }
 
 export async function approveLessonPlan(id: string) {
-  const [plan] = await db
-    .update(lessonPlans)
-    .set({ status: "approved", updatedAt: new Date() })
-    .where(eq(lessonPlans.id, id))
-    .returning();
+  try {
+    const [plan] = await db
+      .update(lessonPlans)
+      .set({ status: "approved", updatedAt: new Date() })
+      .where(eq(lessonPlans.id, id))
+      .returning();
 
-  if (plan) {
-    const summary = `Thema: ${plan.topic}. ${
-      Array.isArray(plan.timeline)
-        ? (plan.timeline as { phase: string; description: string }[])
-            .map((p) => `${p.phase}: ${p.description}`)
-            .join(". ")
-        : ""
-    }`;
+    if (plan) {
+      const summary = `Thema: ${plan.topic}. ${
+        Array.isArray(plan.timeline)
+          ? (plan.timeline as { phase: string; description: string }[])
+              .map((p) => `${p.phase}: ${p.description}`)
+              .join(". ")
+          : ""
+      }`;
 
-    await db.insert(diaryEntries).values({
-      classGroupId: plan.classGroupId,
-      lessonPlanId: plan.id,
-      entryDate: plan.lessonDate || new Date().toISOString().split("T")[0],
-      plannedSummary: summary,
-      progressStatus: "planned",
-    });
+      await db.insert(diaryEntries).values({
+        classGroupId: plan.classGroupId,
+        lessonPlanId: plan.id,
+        entryDate: plan.lessonDate || new Date().toISOString().split("T")[0],
+        plannedSummary: summary,
+        progressStatus: "planned",
+      });
+    }
+
+    revalidatePath(`/classes/${plan?.classGroupId}`);
+    return plan;
+  } catch (error) {
+    log.error("action.lesson-plans.approve", { input: { id }, error });
+    throw error;
   }
-
-  revalidatePath(`/classes/${plan?.classGroupId}`);
-  return plan;
 }
 
 export async function createBlankLessonPlan(

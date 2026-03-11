@@ -6,6 +6,7 @@ import { and, eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentTeacherId } from "@/lib/auth";
+import { log } from "@/lib/logger";
 
 export async function getClassGroups(status: string = "active") {
   const teacherId = await getCurrentTeacherId();
@@ -34,19 +35,28 @@ export async function createClassGroup(
   const subject = formData.get("subject") as string;
   const schoolYear = formData.get("schoolYear") as string;
 
-  const teacherId = await getCurrentTeacherId();
+  let created;
+  try {
+    const teacherId = await getCurrentTeacherId();
 
-  const [created] = await db
-    .insert(classGroups)
-    .values({
-      teacherId,
-      name,
-      grade,
-      subject,
-      schoolYear,
-      predecessorId: predecessorId ?? undefined,
-    })
-    .returning();
+    [created] = await db
+      .insert(classGroups)
+      .values({
+        teacherId,
+        name,
+        grade,
+        subject,
+        schoolYear,
+        predecessorId: predecessorId ?? undefined,
+      })
+      .returning();
+  } catch (error) {
+    log.error("action.class-groups.create", {
+      input: { name, grade, subject, schoolYear, predecessorId },
+      error,
+    });
+    throw error;
+  }
 
   revalidatePath("/classes");
   redirect(`/classes/${created.id}`);
@@ -75,26 +85,31 @@ export async function saveTransitionSummary(
 }
 
 export async function archiveClassGroup(id: string) {
-  const [classGroup] = await db
-    .select()
-    .from(classGroups)
-    .where(eq(classGroups.id, id))
-    .limit(1);
+  try {
+    const [classGroup] = await db
+      .select()
+      .from(classGroups)
+      .where(eq(classGroups.id, id))
+      .limit(1);
 
-  if (!classGroup) {
-    throw new Error("Klasse nicht gefunden.");
+    if (!classGroup) {
+      throw new Error("Klasse nicht gefunden.");
+    }
+
+    if (!classGroup.transitionSummary?.trim()) {
+      throw new Error(
+        "Die Übergangszusammenfassung muss gespeichert sein, bevor die Klasse archiviert werden kann."
+      );
+    }
+
+    await db
+      .update(classGroups)
+      .set({ status: "archived", updatedAt: new Date() })
+      .where(eq(classGroups.id, id));
+
+    revalidatePath("/classes");
+  } catch (error) {
+    log.error("action.class-groups.archive", { input: { id }, error });
+    throw error;
   }
-
-  if (!classGroup.transitionSummary?.trim()) {
-    throw new Error(
-      "Die Übergangszusammenfassung muss gespeichert sein, bevor die Klasse archiviert werden kann."
-    );
-  }
-
-  await db
-    .update(classGroups)
-    .set({ status: "archived", updatedAt: new Date() })
-    .where(eq(classGroups.id, id));
-
-  revalidatePath("/classes");
 }

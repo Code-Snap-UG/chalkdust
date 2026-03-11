@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { diaryEntries, materials } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { log } from "@/lib/logger";
 
 export async function getDiaryEntries(classGroupId: string) {
   return db
@@ -30,16 +31,21 @@ export async function updateDiaryEntry(
     progressStatus?: string;
   }
 ) {
-  const [updated] = await db
-    .update(diaryEntries)
-    .set({ ...updates, updatedAt: new Date() })
-    .where(eq(diaryEntries.id, id))
-    .returning();
+  try {
+    const [updated] = await db
+      .update(diaryEntries)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(diaryEntries.id, id))
+      .returning();
 
-  if (updated) {
-    revalidatePath(`/classes/${updated.classGroupId}`);
+    if (updated) {
+      revalidatePath(`/classes/${updated.classGroupId}`);
+    }
+    return updated;
+  } catch (error) {
+    log.error("action.diary.update", { input: { id, updates }, error });
+    throw error;
   }
-  return updated;
 }
 
 export async function getDiaryEntryMaterials(diaryEntryId: string) {
