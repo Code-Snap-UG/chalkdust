@@ -24,9 +24,15 @@ else
   fi
 fi
 
-echo "Importing $DUMP_FILE into local database..."
-echo "Target: $DATABASE_URL"
+# Extract DB name and base URL (strip trailing /dbname and query params)
+DB_NAME=$(echo "$DATABASE_URL" | sed 's|.*\/||' | sed 's|?.*||')
+BASE_URL=$(echo "$DATABASE_URL" | sed "s|/${DB_NAME}.*||")
 
+echo "Resetting local database '$DB_NAME'..."
+psql "${BASE_URL}/postgres" -c "DROP DATABASE IF EXISTS \"${DB_NAME}\" WITH (FORCE);"
+psql "${BASE_URL}/postgres" -c "CREATE DATABASE \"${DB_NAME}\";"
+
+echo "Importing $DUMP_FILE..."
 psql "$DATABASE_URL" -f "$DUMP_FILE"
 
 echo "Import complete."

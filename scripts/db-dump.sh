@@ -27,6 +27,7 @@ PGPASSWORD="$DB_POSTGRES_PASSWORD" pg_dump \
   --port=5432 \
   --username="$DB_POSTGRES_USER" \
   --dbname="$DB_POSTGRES_DATABASE" \
+  --schema=public \
   --no-owner \
   --no-acl \
   --no-privileges \
