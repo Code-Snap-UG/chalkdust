@@ -9,7 +9,9 @@
     "lint": "eslint",
     "view-db": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/chalkdust npx drizzle-kit studio",
     "eval:dev": "export AI_MOCK=false && evalite watch",
-    "eval:run": "export AI_MOCK=false && evalite"
+    "eval:run": "export AI_MOCK=false && evalite",
+    "db-dump": "bash scripts/db-dump.sh",
+    "db-import": "bash scripts/db-import.sh"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.47",
