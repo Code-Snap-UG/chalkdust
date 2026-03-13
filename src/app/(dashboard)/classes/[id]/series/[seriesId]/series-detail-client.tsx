@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
   Check,
@@ -330,29 +331,46 @@ export function SeriesDetailClient({
                 }`}
               >
                 {isEditing ? (
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      className="font-semibold"
-                    />
-                    <Textarea
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      rows={2}
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        Geschätzte Stunden:
-                      </span>
+                  <div className="flex flex-col gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor={`milestone-title-${milestone.id}`}>
+                        Meilensteintitel
+                      </Label>
                       <Input
+                        id={`milestone-title-${milestone.id}`}
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="z.B. Einführung in die Grammatik"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor={`milestone-desc-${milestone.id}`}>
+                        Beschreibung{" "}
+                        <span className="font-normal text-muted-foreground">
+                          (optional)
+                        </span>
+                      </Label>
+                      <Textarea
+                        id={`milestone-desc-${milestone.id}`}
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        placeholder="Kurze Beschreibung des Meilensteins…"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor={`milestone-lessons-${milestone.id}`}>
+                        Geschätzte Stunden
+                      </Label>
+                      <Input
+                        id={`milestone-lessons-${milestone.id}`}
                         type="number"
                         value={editEstLessons}
                         onChange={(e) =>
                           setEditEstLessons(parseInt(e.target.value) || 1)
                         }
                         min={1}
-                        className="w-20"
+                        className="w-24"
                       />
                     </div>
                     <div className="flex gap-1.5">

@@ -89,3 +89,18 @@ export async function getCurriculumTopics(classGroupId: string) {
     .where(eq(curriculumTopics.curriculumId, curriculum.id))
     .orderBy(curriculumTopics.sortOrder);
 }
+
+export async function updateCurriculumTopics(
+  classGroupId: string,
+  topics: { title: string; description: string; competencyArea: string }[]
+) {
+  const existing = await getCurriculum(classGroupId);
+
+  return saveCurriculum(classGroupId, {
+    subject: existing?.subject ?? "",
+    grade: existing?.grade ?? "",
+    sourceFileName: existing?.sourceFileName ?? "",
+    parsedContent: existing?.parsedContent ?? "",
+    topics,
+  });
+}

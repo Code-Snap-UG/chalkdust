@@ -364,42 +364,60 @@ export function NewSeriesForm({
                   >
                     <CardContent className="py-3">
                       {editingIdx === idx && editDraft ? (
-                        <div className="flex flex-col gap-2">
-                          <Input
-                            value={editDraft.title}
-                            onChange={(e) =>
-                              setEditDraft({
-                                ...editDraft,
-                                title: e.target.value,
-                              })
-                            }
-                            placeholder="Meilenstein-Titel"
-                            className="font-semibold"
-                          />
-                          <Textarea
-                            value={editDraft.description}
-                            onChange={(e) =>
-                              setEditDraft({
-                                ...editDraft,
-                                description: e.target.value,
-                              })
-                            }
-                            placeholder="Beschreibung"
-                            rows={2}
-                          />
-                          <Input
-                            type="number"
-                            value={editDraft.estimatedLessons}
-                            onChange={(e) =>
-                              setEditDraft({
-                                ...editDraft,
-                                estimatedLessons:
-                                  parseInt(e.target.value) || 1,
-                              })
-                            }
-                            min={1}
-                            className="w-32"
-                          />
+                        <div className="flex flex-col gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor={`m-title-${idx}`}>Meilensteintitel</Label>
+                            <Input
+                              id={`m-title-${idx}`}
+                              value={editDraft.title}
+                              onChange={(e) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  title: e.target.value,
+                                })
+                              }
+                              placeholder="z.B. Einführung in die Grammatik"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor={`m-desc-${idx}`}>
+                              Beschreibung{" "}
+                              <span className="font-normal text-muted-foreground">
+                                (optional)
+                              </span>
+                            </Label>
+                            <Textarea
+                              id={`m-desc-${idx}`}
+                              value={editDraft.description}
+                              onChange={(e) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  description: e.target.value,
+                                })
+                              }
+                              placeholder="Kurze Beschreibung des Meilensteins…"
+                              rows={2}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor={`m-lessons-${idx}`}>
+                              Geschätzte Stunden
+                            </Label>
+                            <Input
+                              id={`m-lessons-${idx}`}
+                              type="number"
+                              value={editDraft.estimatedLessons}
+                              onChange={(e) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  estimatedLessons:
+                                    parseInt(e.target.value) || 1,
+                                })
+                              }
+                              min={1}
+                              className="w-24"
+                            />
+                          </div>
                           <div className="flex gap-1.5">
                             <Button size="sm" onClick={saveEdit}>
                               <Check className="mr-1 size-3" />
@@ -473,7 +491,7 @@ export function NewSeriesForm({
 
               <Button variant="outline" size="sm" onClick={addEmptyMilestone}>
                 <Plus className="mr-1.5 size-3.5" />
-                Milestone hinzufügen
+                Meilenstein hinzufügen
               </Button>
 
               <Button

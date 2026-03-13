@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +21,7 @@ import {
   Upload,
   Trash2,
   GripVertical,
+  PenLine,
 } from "lucide-react";
 
 type ArchivedClass = {
@@ -57,6 +57,7 @@ function NewClassWizard() {
   );
 
   // Step 2 data
+  const [curriculumMode, setCurriculumMode] = useState<"pdf" | "manual" | null>(null);
   const [fileName, setFileName] = useState("");
   const [parsedContent, setParsedContent] = useState("");
   const [topics, setTopics] = useState<ExtractedTopic[]>([]);
@@ -111,6 +112,12 @@ function NewClassWizard() {
       ...prev,
       { title: "", description: "", competencyArea: "" },
     ]);
+  }
+
+  function handleManualCreate() {
+    setCurriculumMode("manual");
+    setTopics([{ title: "", description: "", competencyArea: "" }]);
+    setStep(3);
   }
 
   function moveTopic(index: number, direction: "up" | "down") {
@@ -169,8 +176,10 @@ function NewClassWizard() {
           {step === 1
             ? "Klassendetails"
             : step === 2
-              ? "Lehrplan hochladen"
-              : "Themen überprüfen"}
+              ? "Lehrplan hinzufügen"
+              : curriculumMode === "manual"
+                ? "Themen eingeben"
+                : "Themen überprüfen"}
         </p>
       </div>
 
@@ -279,52 +288,65 @@ function NewClassWizard() {
       {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Lehrplan hochladen</CardTitle>
+            <CardTitle>Lehrplan hinzufügen</CardTitle>
             <CardDescription>
-              Lade den Lehrplan als PDF hoch. Die KI extrahiert
-              automatisch die Themen und Kompetenzbereiche.
+              Wie möchtest du den Lehrplan für diese Klasse hinterlegen?
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8">
-              {isPending ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="size-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">
-                    PDF wird analysiert und Themen werden extrahiert...
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <Upload className="size-8 text-muted-foreground" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium">
-                      PDF-Datei hier hochladen
-                    </p>
+            {isPending ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10">
+                <Loader2 className="size-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">
+                  PDF wird analysiert und Themen werden extrahiert…
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {/* Option 1: PDF upload */}
+                <label className="group flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-muted/30">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                    <Upload className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">PDF hochladen</p>
                     <p className="text-xs text-muted-foreground">
-                      Lehrplan als PDF (max. 10 MB)
+                      Die KI liest den Lehrplan und extrahiert automatisch Themen und Kompetenzbereiche. Max. 10 MB.
                     </p>
                   </div>
-                  <label>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
-                    <Button variant="outline" asChild>
-                      <span>Datei auswählen</span>
-                    </Button>
-                  </label>
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(1)}>
+                </label>
+
+                {/* Option 2: Manual entry */}
+                <button
+                  type="button"
+                  onClick={handleManualCreate}
+                  className="group flex items-start gap-4 rounded-lg border p-4 text-left transition-colors hover:border-primary/50 hover:bg-muted/30"
+                >
+                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                    <PenLine className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Manuell erstellen</p>
+                    <p className="text-xs text-muted-foreground">
+                      Themen und Kompetenzbereiche direkt selbst eingeben — ohne PDF.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setStep(1)} disabled={isPending}>
                 <ArrowLeft className="mr-2 size-4" />
                 Zurück
               </Button>
-              <Button variant="ghost" onClick={() => handleFinish()}>
+              <Button variant="ghost" onClick={() => handleFinish()} disabled={isPending} className="text-muted-foreground">
                 Ohne Lehrplan fortfahren
               </Button>
             </div>
@@ -335,10 +357,13 @@ function NewClassWizard() {
       {step === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle>Extrahierte Themen überprüfen</CardTitle>
+            <CardTitle>
+              {curriculumMode === "manual" ? "Lehrplan manuell anlegen" : "Extrahierte Themen überprüfen"}
+            </CardTitle>
             <CardDescription>
-              Die KI hat {topics.length} Themen aus dem Lehrplan
-              extrahiert. Du kannst sie bearbeiten, umsortieren oder ergänzen.
+              {curriculumMode === "manual"
+                ? "Füge die Themen und Kompetenzbereiche deines Lehrplans ein. Du kannst jederzeit weitere ergänzen."
+                : `Die KI hat ${topics.length} Themen aus dem Lehrplan extrahiert. Du kannst sie bearbeiten, umsortieren oder ergänzen.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -368,12 +393,17 @@ function NewClassWizard() {
                     onChange={(e) =>
                       updateTopic(i, "description", e.target.value)
                     }
-                    placeholder="Beschreibung"
+                    placeholder="Beschreibung (optional)"
                     className="text-sm"
                   />
-                  <Badge variant="secondary" className="text-xs">
-                    {topic.competencyArea || "Kein Kompetenzbereich"}
-                  </Badge>
+                  <Input
+                    value={topic.competencyArea}
+                    onChange={(e) =>
+                      updateTopic(i, "competencyArea", e.target.value)
+                    }
+                    placeholder="Kompetenzbereich (optional)"
+                    className="text-xs"
+                  />
                 </div>
                 <button
                   onClick={() => removeTopic(i)}
