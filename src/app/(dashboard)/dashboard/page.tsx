@@ -155,12 +155,12 @@ export default async function DashboardPage() {
               <h2 className="mt-3 text-lg font-bold">KI-gestützte Planung</h2>
               <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                 Wähle eine Klasse und lass die KI in Minuten einen vollständigen
-                Unterrichtsplan erstellen — abgestimmt auf dein Kerncurriculum.
+                Unterrichtsplan erstellen — abgestimmt auf deinen Lehrplan.
               </p>
             </div>
             <ul className="space-y-2 text-sm text-muted-foreground border-t pt-4">
               {[
-                "Am Kerncurriculum ausgerichtet",
+                "Am Lehrplan ausgerichtet",
                 "Differenzierung für alle Lernenden",
                 "Verfeinern per Chat",
                 "Klassentagebuch & Fortschritt",

@@ -8,7 +8,7 @@
 
 Chalkdust's core feature enables teachers to plan individual lessons with LLM assistance. The system uses three layers of context to generate high-quality, relevant lesson plans:
 
-1. **Kerncurriculum** -- the government-mandated curriculum for a specific grade and subject, uploaded as a PDF
+1. **Lehrplan** -- the plan and requirements for the year for a specific grade and subject, uploaded as a PDF
 2. **Class Diary** -- a living log of what the class has actually done (auto-populated from plans, annotated by the teacher)
 3. **Teacher Intent** -- what the teacher wants to cover next, expressed via a structured form + conversational refinement
 
@@ -114,19 +114,19 @@ erDiagram
 ```mermaid
 flowchart TD
     A[Teacher clicks 'New Class'] --> B[Fills form: Name, Grade, Subject, School Year]
-    B --> C[Uploads Kerncurriculum PDF]
+    B --> C[Uploads Lehrplan PDF]
     C --> D[System parses PDF via LLM]
     D --> E[Extracted topics shown for review]
     E --> F{Teacher confirms?}
-    F -->|Yes| G[Class created with curriculum indexed]
+    F -->|Yes| G[Class created with Lehrplan indexed]
     F -->|Adjust| E
 ```
 
 **Screen: "New Class" wizard (2-3 steps)**
 
 - Step 1: Class details (name like "5a", grade "5", subject "Mathematik", school year "2026/27")
-- Step 2: Upload Kerncurriculum PDF. System processes it (loading state). LLM extracts and structures the topics/competency areas.
-- Step 3: Review extracted curriculum topics. Teacher can edit, reorder, or add missing topics. Confirm.
+- Step 2: Upload Lehrplan PDF. System processes it (loading state). LLM extracts and structures the topics/competency areas.
+- Step 3: Review extracted Lehrplan topics. Teacher can edit, reorder, or add missing topics. Confirm.
 
 **Technical notes:**
 
@@ -139,7 +139,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Teacher selects a ClassGroup] --> B[Dashboard shows: curriculum progress, recent diary, upcoming gaps]
+    A[Teacher selects a ClassGroup] --> B[Dashboard shows: Lehrplan progress, recent diary, upcoming gaps]
     B --> C[Teacher clicks 'Plan Next Lesson']
     C --> D[Structured Form: date, duration, topic area, notes]
     D --> E[System assembles context]
@@ -160,14 +160,14 @@ The screen is split into two conceptual areas:
 - **Left/Top: Context Panel (structured form)**
   - Pre-selected class (from navigation context)
   - Date picker + duration (e.g., 45 min / 90 min)
-  - Topic selector (dropdown from curriculum topics, or free text)
+  - Topic selector (dropdown from Lehrplan topics, or free text)
   - "What should students achieve?" (optional free-text learning goal)
   - "Additional notes" (e.g., "We have access to the computer lab", "3 students are absent")
   - Button: "Generate Lesson Plan"
 - **Right/Bottom: Output + Chat Panel**
   - **Generated Lesson Plan** displayed as a structured card/document:
     - **Thema** (Topic)
-    - **Lernziele** (Learning objectives, tied to Kerncurriculum competencies)
+    - **Lernziele** (Learning objectives, tied to Lehrplan competencies)
     - **Stundenablauf** (Lesson timeline -- e.g., 5 min intro, 20 min group work, 15 min discussion, 5 min wrap-up)
     - **Methoden** (Teaching methods)
     - **Differenzierung** (Differentiation for weaker/stronger students)
@@ -178,7 +178,7 @@ The screen is split into two conceptual areas:
 
 **Context assembly for the LLM prompt (what gets sent):**
 
-1. Relevant Kerncurriculum excerpt (topics around the selected area)
+1. Relevant Lehrplan excerpt (topics around the selected area)
 2. Reihenplanung context (if the lesson belongs to a series) -- full milestone arc with goals, status, and lesson summaries. See [`lesson-series.md`](./lesson-series.md) for details.
 3. Last N diary entries for this class (what was recently covered, teacher notes, and summaries of attached materials -- both system-generated and teacher-uploaded)
 4. The structured form inputs (date, duration, topic, goals, notes)
@@ -196,7 +196,7 @@ flowchart TD
     D --> E[Teacher fills in: what actually happened, notes, progress status]
     E --> F[Teacher uploads external materials they used]
     F --> G{Mark topics as...}
-    G -->|Completed| H[Topic progress updated in curriculum view]
+    G -->|Completed| H[Topic progress updated in Lehrplan view]
     G -->|Partially done| I[Noted for next planning session]
     G -->|Skipped / Changed| J[Teacher describes what happened instead]
     H --> K[Context updated for future LLM calls]
@@ -211,7 +211,7 @@ flowchart TD
 - Expanding an entry shows the full planned summary + teacher's actual notes
 - Teacher can edit the "What actually happened" and "Notes" fields at any time
 - **File upload area**: teacher can attach external materials (PDFs, worksheets, images, documents) they used in the lesson that aren't already in the system. These are stored as Materials with `source: "uploaded"` and become available as context for future LLM-assisted planning.
-- A progress bar or topic checklist at the top shows overall curriculum coverage
+- A progress bar or topic checklist at the top shows overall Lehrplan coverage
 
 ---
 
@@ -236,7 +236,7 @@ flowchart TD
 When a school year wraps up, the teacher triggers a "Close School Year" action on the ClassGroup. This initiates a transition flow:
 
 1. **LLM-generated draft**: The system analyzes all diary entries for the year and generates a draft transition summary:
-   - **Overall summary**: What was accomplished, how much of the curriculum was covered
+   - **Overall summary**: What was accomplished, how much of the Lehrplan was covered
    - **Strengths**: Areas where the class performed well, topics they grasped quickly
    - **Weaknesses**: Areas that need reinforcement, topics that were difficult or incomplete
 2. **Teacher review**: The teacher edits, adds to, or rewrites the draft. They know the class better than the AI -- the draft is a starting point, not the final word.
@@ -293,14 +293,14 @@ flowchart TD
     mainContent --> Actions
 
     Actions -->|Plan Next Lesson| PlanLesson["/classes/:id/plan"]
-    Actions -->|View Full Curriculum| CurriculumView["/classes/:id/curriculum"]
+    Actions -->|View Full Lehrplan| CurriculumView["/classes/:id/curriculum"]
     Actions -->|View Full Diary| DiaryView["/classes/:id/diary"]
 ```
 
 **Layout:**
 
 - **Header**: Class name, grade, subject, school year. Edit button to update class details.
-- **Curriculum progress**: A visual progress bar or ring showing how much of the Kerncurriculum has been covered (e.g., "12 of 34 topics completed"). Links to the full curriculum view.
+- **Lehrplan progress**: A visual progress bar or ring showing how much of the Lehrplan has been covered (e.g., "12 of 34 topics completed"). Links to the full Lehrplan view.
 - **Quick stats**: Number of lessons taught, topics completed, topics remaining, total hours taught.
 - **Lesson timeline** (the core of this page): A reverse-chronological list of all diary entries for this class. Each entry shows:
   - Date and lesson number (e.g., "Stunde 14 -- 20. Feb 2026")
@@ -331,7 +331,7 @@ flowchart LR
         ClassList[Class List -- '/classes']
         ClassDetail[Class Detail -- '/classes/:id']
         ClassSetup[New Class Wizard -- '/classes/new']
-        CurriculumView[Curriculum View -- '/classes/:id/curriculum']
+        CurriculumView[Lehrplan View -- '/classes/:id/curriculum']
         DiaryView[Class Diary -- '/classes/:id/diary']
         PlanLesson[Plan a Lesson -- '/classes/:id/plan']
         PlanDetail[Lesson Plan Detail -- '/lesson-plans/:id']
@@ -351,7 +351,7 @@ flowchart LR
 **Navigation changes:**
 
 - Add "My Classes" to the sidebar (primary nav item, above Lesson Plans)
-- The class detail page becomes the hub for a specific class: curriculum overview, diary, and the "Plan a Lesson" action
+- The class detail page becomes the hub for a specific class: Lehrplan overview, diary, and the "Plan a Lesson" action
 - Existing "Lesson Plans" page becomes a cross-class library view
 - Existing "AI Assistant" page can remain as a general-purpose chat, or be folded into the "Plan a Lesson" hybrid view
 
@@ -368,7 +368,7 @@ flowchart TD
     end
 
     subgraph backend [Backend -- Next.js API Routes / Server Actions]
-        CurriculumAPI["/api/curriculum -- PDF upload and parsing"]
+        CurriculumAPI["/api/curriculum -- Lehrplan PDF upload and parsing"]
         PlanAPI["/api/lesson-plans -- CRUD + generation"]
         ChatAPI["/api/chat -- streaming LLM responses"]
         DiaryAPI["/api/diary -- diary CRUD"]
@@ -558,9 +558,9 @@ flowchart TD
 
 **Layer 1 -- Role and Persona:**
 
-> Du bist ein erfahrener Unterrichtsplanungsassistent für deutsche Lehrkräfte. Du erstellst strukturierte, praxisnahe Unterrichtsentwürfe, die dem Kerncurriculum entsprechen. Du antwortest immer auf Deutsch.
+> Du bist ein erfahrener Unterrichtsplanungsassistent für deutsche Lehrkräfte. Du erstellst strukturierte, praxisnahe Unterrichtsentwürfe, die dem Lehrplan entsprechen. Du antwortest immer auf Deutsch.
 
-Key points: German language, practical (not theoretical), curriculum-aligned, experienced teacher voice (not generic AI).
+Key points: German language, practical (not theoretical), Lehrplan-aligned, experienced teacher voice (not generic AI).
 
 **Layer 2 -- Pedagogical Guidelines:**
 
@@ -583,15 +583,15 @@ For refinement mode: the tool definitions listed in 6.2 above. For initial gener
 
 **Layer 5 -- Curriculum Excerpt (dynamic):**
 
-Not the entire Kerncurriculum -- only the relevant section. Strategy:
+Not the entire Lehrplan -- only the relevant section. Strategy:
 
 - If the teacher selected a specific topic from the dropdown, include that topic + its neighboring topics (for context on what comes before/after)
-- If free-text, use a simple keyword match against the topic index to find the most relevant 2-3 curriculum sections
-- Include at most ~2000 tokens of curriculum context to leave room for other layers
+- If free-text, use a simple keyword match against the topic index to find the most relevant 2-3 Lehrplan sections
+- Include at most ~2000 tokens of Lehrplan context to leave room for other layers
 
 **Layer 5b -- Reihenplanung (dynamic, optional — added March 2026):**
 
-When a lesson belongs to a Lesson Series (Unterrichtsreihe), the full series arc is inserted between the curriculum excerpt and diary entries. This includes all milestones with their status, learning goals, and linked lesson summaries — giving the AI both backward-looking (diary) and forward-looking (Reihe) context. See [`lesson-series.md`](./lesson-series.md) for full details of this context layer.
+When a lesson belongs to a Lesson Series (Unterrichtsreihe), the full series arc is inserted between the Lehrplan excerpt and diary entries. This includes all milestones with their status, learning goals, and linked lesson summaries — giving the AI both backward-looking (diary) and forward-looking (Reihe) context. See [`lesson-series.md`](./lesson-series.md) for full details of this context layer.
 
 **Layer 6 -- Recent Diary Entries (dynamic):**
 
@@ -714,11 +714,11 @@ Token budgets (approximate, for a ~128k context model):
 - Conversation history: ~2000 tokens (last N messages)
 - **Total context: ~8000 tokens** -- well within limits even for smaller models
 
-If context grows beyond budget (e.g., very long diary entries or detailed curriculum), apply a priority-based truncation:
+If context grows beyond budget (e.g., very long diary entries or detailed Lehrplan), apply a priority-based truncation:
 
 1. Never truncate: teacher input, current conversation, tool definitions
 2. Summarize if needed: diary entries (keep last 3 full, summarize older ones)
-3. Trim if needed: curriculum excerpt (narrow to just the selected topic)
+3. Trim if needed: Lehrplan excerpt (narrow to just the selected topic)
 
 ### 6.5 Quality Guardrails
 
@@ -747,12 +747,12 @@ The system uses different LLM configurations depending on the task:
 
 | Mode | Used For | Method | Model Preference |
 | --- | --- | --- | --- |
-| **Curriculum Extraction** | Parsing Kerncurriculum PDF into topics | `generateObject` with extraction schema | High-capability model (complex document understanding) |
+| **Lehrplan Extraction** | Parsing Lehrplan PDF into topics | `generateObject` with extraction schema | High-capability model (complex document understanding) |
 | **Plan Generation** | Creating a new lesson plan from scratch | `generateObject` with lesson plan schema | High-capability model (creative + structured) |
 | **Plan Refinement** | Iterating on an existing plan via chat | `streamText` with tools | Fast model (targeted changes, lower latency) |
 | **Transition Summary** | End-of-year class assessment | `generateObject` with summary schema | High-capability model (synthesis of many diary entries) |
 
-Using different models/configurations per mode lets us optimize for cost and latency. Plan refinement via tool-use is lightweight and can use a faster, cheaper model. Initial generation and curriculum parsing need the heavier model for quality.
+Using different models/configurations per mode lets us optimize for cost and latency. Plan refinement via tool-use is lightweight and can use a faster, cheaper model. Initial generation and Lehrplan parsing need the heavier model for quality.
 
 ---
 
@@ -761,8 +761,8 @@ Using different models/configurations per mode lets us optimize for cost and lat
 ### Must Have (MVP)
 
 - Teacher can create a ClassGroup with grade, subject, school year, and status (active/archived)
-- Teacher can upload a Kerncurriculum PDF; system extracts and indexes topics
-- Teacher can review and edit extracted curriculum topics
+- Teacher can upload a Lehrplan PDF; system extracts and indexes topics
+- Teacher can review and edit extracted Lehrplan topics
 - Teacher can plan a lesson via the hybrid form + chat interface
 - LLM generates a structured lesson plan (topic, objectives, timeline, methods, differentiation, materials, homework)
 - Teacher can refine the plan via conversational chat
@@ -770,9 +770,9 @@ Using different models/configurations per mode lets us optimize for cost and lat
 - A diary entry is auto-created when a lesson plan is saved
 - Teacher can annotate diary entries with what actually happened
 - Teacher can upload external materials (documents, worksheets, etc.) to diary entries
-- LLM context includes: curriculum excerpt + recent diary entries (including attached materials) + teacher input
+- LLM context includes: Lehrplan excerpt + recent diary entries (including attached materials) + teacher input
 - LLM outputs lesson plans as hybrid structured JSON (strict schema with rich markdown content in fields)
-- Lesson plan schema is validated after generation (durations sum correctly, required fields present, curriculum references valid)
+- Lesson plan schema is validated after generation (durations sum correctly, required fields present, Lehrplan references valid)
 - Plan refinement uses LLM tool-use (targeted updates) rather than full regeneration
 - Teacher can archive a ClassGroup at end of school year; archived groups are read-only but accessible
 

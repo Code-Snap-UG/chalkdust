@@ -1,10 +1,10 @@
-# Curriculum & Context Pipeline
+# Lehrplan & Context Pipeline
 
 > **Status:** built
 > **Created:** 2026-02-26
-> **Updated:** 2026-03-05
+> **Updated:** 2026-03-13
 
-This document describes how an uploaded curriculum document is processed, stored, and ultimately used to inform AI-generated lesson plans.
+This document describes how an uploaded Lehrplan (curriculum) document is processed, stored, and ultimately used to inform AI-generated lesson plans.
 
 ---
 
@@ -12,12 +12,12 @@ This document describes how an uploaded curriculum document is processed, stored
 
 The pipeline has two distinct, decoupled phases:
 
-1. **Extraction** — a one-time, upload-time step that converts the raw curriculum PDF into a structured topic list.
+1. **Extraction** — a one-time, upload-time step that converts the raw Lehrplan PDF into a structured topic list.
 2. **Context assembly** — a per-request step that composes a lean, focused prompt context from the stored topic list (never from the raw file).
 
 ---
 
-## Phase 1: Curriculum Extraction (upload-time)
+## Phase 1: Lehrplan Extraction (upload-time)
 
 **Route:** `POST /api/curriculum/upload`  
 **Source:** `src/app/api/curriculum/upload/route.ts`
@@ -42,7 +42,7 @@ The pipeline has two distinct, decoupled phases:
 ### Why extract rather than store raw?
 
 - The raw document can be dozens of pages. Injecting that into every lesson-plan prompt would be expensive and noisy.
-- The extraction step compresses the curriculum into a dense, machine-readable list of topics ordered by the logical flow of the school year.
+- The extraction step compresses the Lehrplan into a dense, machine-readable list of topics ordered by the logical flow of the school year.
 - Individual topics can later be selected by the teacher in the UI, enabling fine-grained context windowing (see Phase 2).
 
 ---
@@ -54,7 +54,7 @@ The pipeline has two distinct, decoupled phases:
 
 This function builds the full context string that is prepended to every lesson-plan generation prompt. It queries the database and concatenates several sections, separated by `---`.
 
-### Curriculum section
+### Lehrplan section
 
 The behaviour depends on whether the teacher has selected a specific topic:
 
@@ -62,7 +62,7 @@ The behaviour depends on whether the teacher has selected a specific topic:
 A window of **3 topics** is sliced from the ordered `curriculumTopics` list — the topic immediately before, the selected topic itself, and the topic immediately after. Only these three are included.
 
 ```
-## Kerncurriculum (relevanter Ausschnitt)
+## Lehrplan (relevanter Ausschnitt)
 
 - **[prev topic title]**: [description] (Kompetenzbereich: [area])
 - **[selected topic title]**: [description] (Kompetenzbereich: [area])
@@ -73,7 +73,7 @@ A window of **3 topics** is sliced from the ordered `curriculumTopics` list — 
 All extracted topics are included as a flat list (title + description only, no competency area).
 
 ```
-## Kerncurriculum (Themenübersicht)
+## Lehrplan (Themenübersicht)
 
 - **[topic title]**: [description]
 - ...
@@ -81,7 +81,7 @@ All extracted topics are included as a flat list (title + description only, no c
 
 ### Other context sections
 
-In addition to the curriculum excerpt, `assembleContext` appends:
+In addition to the Lehrplan excerpt, `assembleContext` appends:
 
 - **Recent diary entries** — the last 10 diary entries for the class, providing a record of what was actually taught and at what pace.
 - **Predecessor transition summary** — if the class group has a predecessor (previous year's class), any documented strengths, weaknesses, and transition summary are included.

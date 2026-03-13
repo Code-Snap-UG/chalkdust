@@ -6,7 +6,7 @@
 
 ## 1. Feature Summary
 
-Lesson Series introduces an optional middle layer between curriculum topics and individual lesson plans. A **Reihe** (Unterrichtsreihe) represents a multi-lesson arc — a coherent unit of instruction that builds progressively toward a goal over multiple lessons.
+Lesson Series introduces an optional middle layer between Lehrplan topics and individual lesson plans. A **Reihe** (Unterrichtsreihe) represents a multi-lesson arc — a coherent unit of instruction that builds progressively toward a goal over multiple lessons.
 
 The core problem it solves: before this feature, Chalkdust generated lessons in isolation. The diary system provided backward-looking continuity ("what did we do last time?") but there was no forward-looking structure ("where is this topic heading over the next 8 weeks?"). Teachers mentally carried the "roter Faden" — the coherent thread connecting lessons — but the system had no representation of it.
 
@@ -14,7 +14,7 @@ The core problem it solves: before this feature, Chalkdust generated lessons in 
 
 - **Optional, not mandatory.** Teachers can still plan one-off lessons without a Reihe. The existing "Stunde planen" flow is unchanged.
 - **AI-drafted, teacher-owned.** The AI suggests milestone breakdowns; the teacher edits everything. All AI output is a draft.
-- **Flexible binding.** A Reihe can link to 0, 1, or multiple curriculum topics. Multiple Reihen can cover the same topic. Short 2-lesson Reihen are fine; 20-lesson ones are fine too.
+- **Flexible binding.** A Reihe can link to 0, 1, or multiple Lehrplan topics. Multiple Reihen can cover the same topic. Short 2-lesson Reihen are fine; 20-lesson ones are fine too.
 - **Living document.** Taught lessons are locked; future milestones stay editable.
 - **Quality first.** No token caps on the Reihe context layer — the system provides full milestone details to the AI for maximum generation quality.
 
@@ -105,7 +105,7 @@ A lesson plan can exist without a series (one-off) or belong to a series and opt
 ### Creating a Reihe
 
 1. Teacher navigates to `/classes/:id/series` and clicks "Reihe planen"
-2. Fills the form: title, description/end goal, estimated lessons, estimated weeks, optional curriculum topic links, additional notes
+2. Fills the form: title, description/end goal, estimated lessons, estimated weeks, optional Lehrplan topic links, additional notes
 3. Clicks "Meilensteine generieren" → AI generates an ordered list of milestones
 4. Teacher reviews, edits, adds, removes, reorders milestones
 5. Saves → Reihe created as `active` (with milestones) or `draft` (without)
@@ -154,7 +154,7 @@ A new AI mode: `series_generation`.
 
 `assembleContext` in `src/lib/ai/context.ts` accepts two new optional parameters: `seriesId` and `milestoneId`.
 
-When provided, a new context layer is inserted **between the curriculum excerpt and diary entries**:
+When provided, a new context layer is inserted **between the Lehrplan excerpt and diary entries**:
 
 ```
 ## Unterrichtsreihe: {title}
@@ -174,7 +174,7 @@ Meilenstein: {currentTitle}
 Position: Stunde {n} von {est} in diesem Meilenstein
 ```
 
-**Critical**: This is additive. All existing context layers — curriculum, diary entries (taught + planned), predecessor transition — remain fully intact. The diary feedback loop is preserved.
+**Critical**: This is additive. All existing context layers — Lehrplan, diary entries (taught + planned), predecessor transition — remain fully intact. The diary feedback loop is preserved.
 
 **No token caps.** All milestones get full detail (title, description, learning goals, lesson summaries). Optimization deferred until proven necessary.
 
@@ -212,7 +212,7 @@ Full context stack for a lesson inside a Reihe:
 
 ### Server Actions (`src/lib/actions/series.ts`)
 
-- `createSeries(classGroupId, data)` — creates series with milestones and curriculum topic links
+- `createSeries(classGroupId, data)` — creates series with milestones and Lehrplan topic links
 - `getSeries(seriesId)` — single series record
 - `getSeriesWithDetails(seriesId)` — series + milestones + linked plans + diary entries
 - `getSeriesForClass(classGroupId)` — all series for a class
@@ -264,7 +264,7 @@ When a diary entry's `progressStatus` is updated, `syncMilestoneStatus` (in `src
 
 3. **No token budget caps on Reihe context.** Quality of generation directly impacts the teacher's classroom. Token optimization is deferred.
 
-4. **Flexible curriculum topic binding.** A many-to-many join table (`series_curriculum_topics`) rather than a single FK, because a Reihe can span multiple topics and multiple Reihen can share a topic.
+4. **Flexible Lehrplan topic binding.** A many-to-many join table (`series_curriculum_topics`) rather than a single FK, because a Reihe can span multiple topics and multiple Reihen can share a topic.
 
 5. **`assembleContext` signature is backward-compatible.** The new `seriesId` and `milestoneId` parameters are optional — all existing callers work without changes.
 

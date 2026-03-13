@@ -46,9 +46,9 @@ Introduced the Lesson Snippets feature: full CRUD, server actions, API routes, a
 
 ---
 
-## 2026-02-26 — Curriculum Extraction & Context Pipeline
+## 2026-02-26 — Lehrplan Extraction & Context Pipeline
 
-Implemented the two-phase curriculum and context pipeline: PDF upload → AI-structured extraction into `curriculumTopics`, and `assembleContext()` composing topic window + diary entries + predecessor transition summary into the lesson plan prompt. See [`architecture/curriculum-and-context-pipeline.md`](./architecture/curriculum-and-context-pipeline.md).
+Implemented the two-phase Lehrplan (curriculum) and context pipeline: PDF upload → AI-structured extraction into `curriculumTopics`, and `assembleContext()` composing topic window + diary entries + predecessor transition summary into the lesson plan prompt. See [`architecture/curriculum-and-context-pipeline.md`](./architecture/curriculum-and-context-pipeline.md).
 
 ---
 

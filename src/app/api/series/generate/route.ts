@@ -46,7 +46,7 @@ export const POST = withLogging(
         .where(inArray(curriculumTopics.id, curriculumTopicIds));
 
       if (topics.length > 0) {
-        topicContext = `\n\n## Verknüpfte Curriculums-Themen\n\n${topics
+        topicContext = `\n\n## Verknüpfte Lehrplanthemen\n\n${topics
           .map(
             (t) =>
               `- **${t.title}**: ${t.description || "Keine Beschreibung"} (${t.competencyArea || "Allgemein"})`

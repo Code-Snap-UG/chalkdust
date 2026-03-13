@@ -153,7 +153,7 @@ You will land on the marketing page. Navigate to [http://localhost:3000/dashboar
 1. Click **Meine Klassen** in the sidebar
 2. Click **Neue Klasse**
 3. Fill in the class details (e.g., name: "5a", grade: "5", subject: "Mathematik", school year: "2025/2026")
-4. Upload a Kerncurriculum PDF -- the AI will extract topics from it (this requires a working API key)
+4. Upload a Lehrplan PDF -- the AI will extract topics from it (this requires a working API key)
 5. Review and edit the extracted topics, then confirm
 
 ### Plan a lesson
@@ -182,7 +182,7 @@ src/
     (dashboard)/
       classes/                  # Class management
         [id]/
-          curriculum/           # Curriculum view
+          curriculum/           # Lehrplan view
           diary/                # Class diary
           plan/                 # Lesson planning (hybrid form + chat)
         new/                    # New class wizard
@@ -194,7 +194,7 @@ src/
     (marketing)/                # Landing page
     api/
       classes/                  # Class CRUD API
-      curriculum/upload/        # PDF upload + topic extraction
+      curriculum/upload/        # Lehrplan PDF upload + topic extraction
       lesson-plans/
         generate/               # LLM plan generation
         [id]/

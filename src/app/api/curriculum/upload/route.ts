@@ -48,7 +48,7 @@ export const POST = withLogging("api.curriculum.upload", async (request) => {
   }
 
   const truncatedText = parsedText.slice(0, 30000);
-  const userPrompt = `Hier ist der Text des Kerncurriculums:\n\n${truncatedText}`;
+  const userPrompt = `Hier ist der Text des Lehrplans:\n\n${truncatedText}`;
 
   const teacherId = await getCurrentTeacherId();
 

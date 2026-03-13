@@ -257,7 +257,7 @@ export default function PlanLessonPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight">Stunde planen</h2>
+        <h1 className="text-xl font-bold tracking-tight">Stunde planen</h1>
         <p className="text-muted-foreground">
           Gib Kontext ein und lass die KI einen Unterrichtsplan erstellen.
         </p>
@@ -321,7 +321,7 @@ export default function PlanLessonPage() {
               {curriculumTopics.length > 0 && (
                 <div className="grid gap-1.5">
                   <Label htmlFor="topic" className="text-xs">
-                    Thema aus dem Curriculum
+                    Thema aus dem Lehrplan
                   </Label>
                   <select
                     id="topic"

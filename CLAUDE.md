@@ -14,7 +14,7 @@ Emotional goal: when a teacher opens Chalkdust, they should feel *calm and in co
 
 ### Aesthetic Direction
 
-**Warm paper / analog** — cream and off-white tones, ink-like typography, the physical quality of a well-designed print piece. Think the texture of a teacher's desk: a good notebook, a quality fountain pen, a well-worn copy of a curriculum booklet with notes in the margins.
+**Warm paper / analog** — cream and off-white tones, ink-like typography, the physical quality of a well-designed print piece. Think the texture of a teacher's desk: a good notebook, a quality fountain pen, a well-worn copy of a Lehrplan booklet with notes in the margins.
 
 **Light-only** — no dark mode for now. The warmth of the palette *is* the identity. Forcing dark mode would strip it.
 

@@ -110,3 +110,28 @@
     font-family: var(--font-display, var(--font-sans));
   }
 }
+
+@media (pointer: coarse) {
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"],
+  [data-slot="select-item"],
+  [data-slot="dropdown-menu-item"],
+  [data-slot="dropdown-menu-checkbox-item"],
+  [data-slot="dropdown-menu-radio-item"],
+  [data-slot="dropdown-menu-sub-trigger"],
+  [data-slot="sidebar-menu-button"],
+  [data-slot="sidebar-menu-sub-button"],
+  [data-slot="sidebar-group-action"],
+  [data-slot="sidebar-menu-action"],
+  [data-slot="sidebar-trigger"] {
+    min-height: 2.75rem;
+  }
+
+  [data-slot="button"][data-size^="icon"],
+  [data-slot="sidebar-group-action"],
+  [data-slot="sidebar-menu-action"],
+  [data-slot="sidebar-trigger"] {
+    min-width: 2.75rem;
+  }
+}

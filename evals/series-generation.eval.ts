@@ -63,7 +63,7 @@ evalite<SeriesInput, SeriesGenerationOutput, SeriesExpected>(
           grade: "5. Klasse",
           subject: "Deutsch",
           additionalNotes:
-            "Inhalte aus dem Kerncurriculum 5/6: epische Kleinformen (Märchen, Fabeln), Figurenkonstellation, Konfliktverlauf, kreatives Schreiben mit Erzählstruktur",
+            "Inhalte aus dem Lehrplan 5/6: epische Kleinformen (Märchen, Fabeln), Figurenkonstellation, Konfliktverlauf, kreatives Schreiben mit Erzählstruktur",
         },
         expected: {
           minMilestones: 3,

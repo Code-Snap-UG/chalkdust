@@ -1,4 +1,4 @@
-export const curriculumExtractionPrompt = `Du bist ein Experte für deutsche Lehrpläne und Kerncurricula. Deine Aufgabe ist es, aus dem folgenden Text eines Kerncurriculums alle Themen, Kompetenzbereiche und Lernziele zu extrahieren.
+export const curriculumExtractionPrompt = `Du bist ein Experte für deutsche Lehrpläne. Deine Aufgabe ist es, aus dem folgenden Text eines Lehrplans alle Themen, Kompetenzbereiche und Lernziele zu extrahieren.
 
 Analysiere den Text sorgfältig und extrahiere eine strukturierte Liste von Themen. Jedes Thema sollte enthalten:
 - **title**: Ein kurzer, prägnanter Titel des Themas

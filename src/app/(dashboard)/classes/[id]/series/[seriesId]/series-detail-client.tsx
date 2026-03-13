@@ -79,7 +79,7 @@ function getLessonStatus(plan: LessonPlanWithDiary): {
   const diary = plan.diaryEntry;
   if (!diary) {
     return plan.status === "approved"
-      ? { label: "Geplant", color: "bg-blue-500" }
+      ? { label: "Geplant", color: "bg-primary" }
       : { label: "Entwurf", color: "bg-muted-foreground/40" };
   }
   switch (diary.progressStatus) {
@@ -90,7 +90,7 @@ function getLessonStatus(plan: LessonPlanWithDiary): {
     case "deviated":
       return { label: "Abgewichen", color: "bg-amber-500" };
     default:
-      return { label: "Geplant", color: "bg-blue-500" };
+      return { label: "Geplant", color: "bg-primary" };
   }
 }
 
@@ -198,12 +198,30 @@ export function SeriesDetailClient({
       <div>
         <Link
           href={`/classes/${classGroupId}/series`}
-          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="size-3" />
+          <ArrowLeft className="size-3.5" />
           Unterrichtsreihen
         </Link>
-        <h1 className="text-3xl font-bold tracking-tight">{series.title}</h1>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-3xl font-bold tracking-tight">{series.title}</h1>
+          <Badge
+            variant={
+              series.status === "active"
+                ? "default"
+                : series.status === "completed"
+                  ? "secondary"
+                  : "outline"
+            }
+            className="shrink-0 text-xs"
+          >
+            {series.status === "active"
+              ? "Aktiv"
+              : series.status === "completed"
+                ? "Abgeschlossen"
+                : "Entwurf"}
+          </Badge>
+        </div>
         <p className="mt-1 text-muted-foreground">
           {classGroup.name} &middot; {classGroup.subject} &middot;{" "}
           {series.estimatedLessons} Stunden
@@ -232,11 +250,11 @@ export function SeriesDetailClient({
               return (
                 <div
                   key={m.id}
-                  className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                  className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
                   title={`${m.title}: ${done}/${est}`}
                 >
                   <div
-                    className={`h-full rounded-full transition-all ${
+                    className={`h-full rounded-full transition-[width] duration-500 ${
                       full ? "bg-primary" : done > 0 ? "bg-primary/50" : ""
                     }`}
                     style={{
@@ -266,16 +284,13 @@ export function SeriesDetailClient({
           return (
             <div
               key={milestone.id}
-              className="relative flex gap-4 pb-8 last:pb-0"
-              style={{
-                animationDelay: `${idx * 75}ms`,
-              }}
+              className="group relative flex gap-4 pb-8 last:pb-0"
             >
               {/* Left column: line + node */}
               <div className="flex w-8 shrink-0 flex-col items-center">
                 {/* Node */}
                 <div
-                  className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                  className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition duration-200 ${
                     done
                       ? "border-primary bg-primary text-primary-foreground"
                       : isCurrent
@@ -306,12 +321,12 @@ export function SeriesDetailClient({
 
               {/* Right column: card */}
               <div
-                className={`min-w-0 flex-1 rounded-xl border p-4 transition-all ${
+                className={`min-w-0 flex-1 rounded-xl border p-4 transition duration-200 ${
                   done
-                    ? "bg-muted/30"
+                    ? "border-border/60 bg-muted/30"
                     : isCurrent
-                      ? "ring-1 ring-primary/20 shadow-md"
-                      : ""
+                      ? "border-primary/30 bg-card shadow-sm"
+                      : "border-border"
                 }`}
               >
                 {isEditing ? (
@@ -379,14 +394,15 @@ export function SeriesDetailClient({
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         {done && (
-                          <Badge variant="default" className="text-xs">
+                          <Badge variant="secondary" className="text-xs">
                             Fertig
                           </Badge>
                         )}
                         {!done && !isArchived && (
                           <button
+                            type="button"
                             onClick={() => startEditMilestone(milestone)}
-                            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 [div:hover>&]:opacity-100"
+                            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover:opacity-100"
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -427,29 +443,37 @@ export function SeriesDetailClient({
 
                     {/* Linked lessons */}
                     {milestone.lessonPlans.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-1.5">
-                        {milestone.lessonPlans.map((plan, pi) => {
-                          const st = getLessonStatus(plan);
-                          return (
-                            <Link
-                              key={plan.id}
-                              href={`/lesson-plans/${plan.id}`}
-                              className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/50"
-                            >
-                              <span
-                                className={`size-2 shrink-0 rounded-full ${st.color}`}
-                              />
-                              <span className="text-xs text-muted-foreground shrink-0">
-                                Stunde {pi + 1}
-                                {plan.lessonDate &&
-                                  ` · ${new Date(plan.lessonDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}`}
-                              </span>
-                              <span className="flex-1 font-medium line-clamp-1">
-                                {plan.topic}
-                              </span>
-                            </Link>
-                          );
-                        })}
+                      <div className="mt-3">
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Stunden
+                        </p>
+                        <div className="flex flex-col">
+                          {milestone.lessonPlans.map((plan, pi) => {
+                            const st = getLessonStatus(plan);
+                            return (
+                              <Link
+                                key={plan.id}
+                                href={`/lesson-plans/${plan.id}`}
+                                className="flex items-center gap-2.5 rounded-sm px-1.5 py-1.5 text-sm transition-colors hover:bg-muted/50 -mx-1.5"
+                              >
+                                <span
+                                  className={`size-1.5 shrink-0 rounded-full ${st.color}`}
+                                />
+                                <span className="w-16 shrink-0 text-xs text-muted-foreground tabular-nums">
+                                  {plan.lessonDate
+                                    ? new Date(plan.lessonDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })
+                                    : `Std. ${pi + 1}`}
+                                </span>
+                                <span className="flex-1 text-sm font-medium line-clamp-1">
+                                  {plan.topic}
+                                </span>
+                                <span className="shrink-0 text-xs text-muted-foreground/60">
+                                  {st.label}
+                                </span>
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
@@ -469,7 +493,7 @@ export function SeriesDetailClient({
 
                     {/* Pending milestone: subtle plan link on hover */}
                     {!done && !isCurrent && !isArchived && (
-                      <div className="mt-3 opacity-0 transition-opacity [div:hover>&]:opacity-100">
+                      <div className="mt-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                         <Button size="sm" variant="ghost" asChild>
                           <Link
                             href={`/classes/${classGroupId}/plan?seriesId=${series.id}&milestoneId=${milestone.id}`}
@@ -492,8 +516,42 @@ export function SeriesDetailClient({
       {!isArchived && (
         <Button variant="outline" size="sm" onClick={addNewMilestone} className="self-start">
           <Plus className="mr-1.5 size-3.5" />
-          Milestone hinzufügen
+          Meilenstein hinzufügen
         </Button>
+      )}
+
+      {/* Unlinked lesson plans */}
+      {series.unlinkedPlans.length > 0 && (
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Nicht zugeordnete Stunden
+            </h3>
+          </div>
+          <div className="flex flex-col border-t">
+            {series.unlinkedPlans.map((plan) => {
+              const st = getLessonStatus(plan);
+              return (
+                <Link
+                  key={plan.id}
+                  href={`/lesson-plans/${plan.id}`}
+                  className="group flex items-center gap-3 border-b py-3 -mx-1 px-1 rounded-sm transition-colors hover:bg-muted/40"
+                >
+                  <span className={`size-1.5 shrink-0 rounded-full ${st.color}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium line-clamp-1">{plan.topic}</p>
+                    {plan.lessonDate && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(plan.lessonDate).toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">{st.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -8,7 +8,7 @@
 
 1. [The Idea](#1-the-idea)
 2. [Core Principles](#2-core-principles)
-3. [Feature 1 — Classes & Curriculum](#3-feature-1--classes--curriculum)
+3. [Feature 1 — Classes & Lehrplan](#3-feature-1--classes--lehrplan)
 4. [Feature 2 — AI Lesson Planning](#4-feature-2--ai-lesson-planning)
 5. [Feature 3 — Lesson Snippets](#5-feature-3--lesson-snippets)
 6. [Feature 4 — Exam Generator](#6-feature-4--exam-generator)
@@ -42,7 +42,7 @@ The AI proposes; the teacher decides. Every AI output is editable. The teacher's
 A generic lesson plan is easy to generate. A plan that knows this class spent three weeks struggling with fractions, has two highly capable students who need challenge, and will be taught on a Monday morning after a holiday — that is genuinely useful. Every feature is designed to deepen the context the AI has access to.
 
 ### Everything is reusable
-Good work should not disappear after one lesson. Plans can be referenced. Phases can become snippets. Snippets can be reused across classes. Exams can be regenerated from the same curriculum coverage map. Chalkdust is an accumulator, not a disposable generator.
+Good work should not disappear after one lesson. Plans can be referenced. Phases can become snippets. Snippets can be reused across classes. Exams can be regenerated from the same Lehrplan coverage map. Chalkdust is an accumulator, not a disposable generator.
 
 ### Progress, not perfection
 A lesson plan that gets refined through chat is better than one that sat unfinished. A diary entry with two sentences is better than none. The system is designed to accept partial input gracefully and still produce something useful.
@@ -52,7 +52,7 @@ Everything the AI knows about a class flows through the class diary. If somethin
 
 ---
 
-## 3. Feature 1 — Classes & Curriculum
+## 3. Feature 1 — Classes & Lehrplan
 
 ### What it is
 
@@ -63,7 +63,7 @@ The foundation of everything in Chalkdust. A **ClassGroup** is the unit of organ
 ```mermaid
 flowchart TD
     A[Teacher clicks 'New Class'] --> B["Step 1: Class details (name, grade, subject, school year)"]
-    B --> C["Step 2: Upload Kerncurriculum PDF"]
+    B --> C["Step 2: Upload Lehrplan PDF"]
     C --> D[AI extracts and structures topics]
     D --> E["Step 3: Teacher reviews and confirms topic list"]
     E --> F{Link to predecessor class?}
@@ -72,13 +72,13 @@ flowchart TD
     G --> H
 ```
 
-The **Kerncurriculum** is the government-mandated curriculum document for a specific subject and grade. Uploading it is a one-time setup step. The AI extracts individual topics with titles, descriptions, and competency areas, and stores them as structured rows. These topics then drive the planning interface (topic dropdown, curriculum progress tracking) and the AI's understanding of what the class should be learning.
+The **Lehrplan** is the plan and requirements for the year for a specific subject and grade (e.g. what the class should cover). Uploading it is a one-time setup step. The AI extracts individual topics with titles, descriptions, and competency areas, and stores them as structured rows. These topics then drive the planning interface (topic dropdown, Lehrplan progress tracking) and the AI's understanding of what the class should be learning.
 
 ### Class detail hub
 
 The `/classes/:id` page is the central hub for everything about a class. It answers the teacher's core question when they open the app: *"Where did I leave off, and what do I need to do next?"*
 
-- Curriculum progress bar — how many topics have been covered vs. remaining
+- Lehrplan progress bar — how many topics have been covered vs. remaining
 - Quick stats — lessons taught, hours recorded, topics completed
 - Lesson timeline — reverse-chronological list of diary entries with status badges
 - Upcoming planned lessons — future-dated approved plans shown above the timeline
@@ -94,8 +94,8 @@ When the new ClassGroup is created and linked to its predecessor, the transition
 
 ### Implementation status
 - ClassGroup CRUD: **built**
-- Curriculum upload + AI extraction: **built**
-- Curriculum topic review UI: **built**
+- Lehrplan upload + AI extraction: **built**
+- Lehrplan topic review UI: **built**
 - Class detail hub: **built**
 - Predecessor linking schema: **built**
 - End-of-year transition flow: **built** — see [`docs/features/end-of-year-transition.md`](../features/end-of-year-transition.md)
@@ -114,7 +114,7 @@ The core loop of Chalkdust. A teacher selects a class, picks a date and topic, a
 
 The `/classes/:id/plan` page is a split-panel hybrid interface:
 
-- **Left panel**: Structured form — date, duration, topic selector (from curriculum or free text), optional learning goal, optional notes (e.g. "we have the computer lab today")
+- **Left panel**: Structured form — date, duration, topic selector (from Lehrplan or free text), optional learning goal, optional notes (e.g. "we have the computer lab today")
 - **Right panel**: AI-generated plan displayed as a structured document, with a chat input below
 
 The chat allows conversational refinement: "Make the group work phase shorter", "Add a warm-up game", "The differentiation section needs more detail for weaker students." Each message triggers targeted tool-use updates — the AI modifies only the specific part of the plan that needs changing, rather than regenerating the whole thing.
@@ -125,7 +125,7 @@ Every lesson plan conforms to a strict schema, validated via Zod:
 
 ```
 topic               — lesson title
-objectives[]        — observable learning goals, linked to curriculum topics
+objectives[]        — observable learning goals, linked to Lehrplan topics
 timeline[]          — lesson phases (Einstieg, Erarbeitung, Sicherung, Abschluss)
   phase             — phase name
   durationMinutes   — time allocation
@@ -146,14 +146,14 @@ The AI's context is assembled from four sources:
 
 ```mermaid
 flowchart LR
-    A[Curriculum excerpt\n~2000 tokens] --> P[Assembled prompt]
+    A[Lehrplan excerpt\n~2000 tokens] --> P[Assembled prompt]
     B[Recent diary entries\n~2000 tokens] --> P
     C[Predecessor transition\n~500 tokens] --> P
     D[Teacher form input\n~200 tokens] --> P
     P --> LLM[AI generates plan]
 ```
 
-**Curriculum excerpt**: The 3-topic window around the selected topic (previous, selected, next). Gives the AI a sense of what came before and what comes after — essential for sequencing.
+**Lehrplan excerpt**: The 3-topic window around the selected topic (previous, selected, next). Gives the AI a sense of what came before and what comes after — essential for sequencing.
 
 **Recent diary entries**: The last 10 taught entries, formatted intelligently. Vague entries ("Alles wie geplant", "Erledigt") are replaced by structured data from the linked lesson plan. Deviated entries always show both what was planned and what actually happened.
 
@@ -189,7 +189,7 @@ This feedback loop is what makes Chalkdust more valuable over time. The AI is no
 - Lesson planning UI (form + plan view + chat): **built**
 - Structured output generation with Zod schema: **built**
 - Tool-use refinement: **built**
-- Context assembly (curriculum + diary + predecessor): **built**
+- Context assembly (Lehrplan + diary + predecessor): **built**
 - Diary auto-creation on plan approval: **built**
 - File upload to diary entries: **built**
 - AI observability traces: **built**
@@ -265,7 +265,7 @@ SnippetClassFavorite
 
 Writing a good exam takes hours. You need to select which topics to test, choose appropriate difficulty levels, write clear task descriptions, decide on point distributions, and prepare a solution sheet. Chalkdust can do the heavy lifting — because it already knows exactly what this class has covered.
 
-The **Exam Generator** takes the class diary and curriculum coverage as input and produces a full, ready-to-use exam. The teacher controls the scope (which weeks or topics to include), the duration, and the difficulty balance. The AI does the rest.
+The **Exam Generator** takes the class diary and Lehrplan coverage as input and produces a full, ready-to-use exam. The teacher controls the scope (which weeks or topics to include), the duration, and the difficulty balance. The AI does the rest.
 
 ### The generation flow
 
@@ -273,7 +273,7 @@ The **Exam Generator** takes the class diary and curriculum coverage as input an
 flowchart TD
     A[Teacher opens Exam Generator for a class] --> B["Configure: time range, duration, difficulty split, format"]
     B --> C[AI analyzes diary entries in range]
-    C --> D[AI maps covered topics to curriculum]
+    C --> D[AI maps covered topics to Lehrplan]
     D --> E[AI generates structured exam]
     E --> F[Teacher reviews and edits tasks]
     F --> G{Satisfied?}
@@ -289,7 +289,7 @@ A structured exam conforming to a defined schema:
 ```
 title           — e.g. "Klassenarbeit Nr. 2 — 5a Mathematik"
 classGroupId    — link to the class
-coveredTopics[] — which curriculum topics are being tested
+coveredTopics[] — which Lehrplan topics are being tested
 duration        — total time in minutes
 totalPoints     — sum of all task points
 tasks[]
@@ -297,7 +297,7 @@ tasks[]
   description   — full task text (markdown supported, can include LaTeX)
   points        — point value
   difficulty    — "basic" | "standard" | "extended"
-  topicRef      — link to the curriculum topic being tested
+  topicRef      — link to the Lehrplan topic being tested
   solution      — solution description (not shown to students; used for teacher's marking guide)
 notes           — general notes for the teacher (e.g. "Task 3 is suitable as a bonus task")
 ```
@@ -307,7 +307,7 @@ notes           — general notes for the teacher (e.g. "Task 3 is suitable as a
 The AI uses:
 
 1. **Diary entries in the selected time range** — what was actually taught, not just what was planned. Deviated and partial entries are handled the same way as in lesson planning.
-2. **Curriculum topic coverage** — which topics are marked as covered or in-progress in the curriculum view.
+2. **Lehrplan topic coverage** — which topics are marked as covered or in-progress in the Lehrplan view.
 3. **Teacher configuration** — duration, difficulty split (e.g. "40% basic, 50% standard, 10% extended"), any specific topics to include or exclude.
 4. **Previous exams for this class** (if any) — Recurring task formats are intentional, not a problem. Students should build on familiar structures and develop fluency with them. The AI aligns task design with the formats used in ESA and MSA exams, and ensures a variety of cognitive operators are practised across exams (e.g. *nennen*, *beschreiben*, *erklären*, *analysieren* in language subjects; *berechnen*, *skizzieren*, *begründen* in STEM subjects).
 
@@ -323,7 +323,7 @@ Exam
   title, duration, totalPoints
   status ("draft" | "approved")
   tasks (jsonb — array of task objects)
-  coveredTopics (jsonb — array of curriculumTopicIds)
+  coveredTopics (jsonb — array of Lehrplan topic IDs)
   timeRangeStart, timeRangeEnd
   notes
   createdAt, updatedAt
@@ -370,7 +370,7 @@ The generator uses:
 1. **Lesson topic and learning objectives** — from the lesson plan
 2. **Phase context** — which phase this material is for (an Erarbeitung worksheet is different from an Abschluss quiz)
 3. **Differentiation notes** — if the material is for a specific tier, the weaker/stronger guidance from the plan shapes the content
-4. **Curriculum topic description** — gives the AI the exact competency area being targeted
+4. **Lehrplan topic description** — gives the AI the exact competency area being targeted
 
 ### Output format
 
@@ -403,13 +403,13 @@ The existing `materials` table records a reference to the generated material; th
 
 A teacher gets sick. Their substitute walks into class with no context — no idea what was covered last week, what materials the class uses, what the current topic is, or what was planned for today. This is a solvable problem.
 
-**Shared access** lets the primary teacher grant another teacher (or a department head, or a school administrator) access to one or more of their classes. The accessing teacher sees the diary, the curriculum progress, the planned lessons, and the materials. They cannot edit plans or diary entries unless explicitly granted write access.
+**Shared access** lets the primary teacher grant another teacher (or a department head, or a school administrator) access to one or more of their classes. The accessing teacher sees the diary, the Lehrplan progress, the planned lessons, and the materials. They cannot edit plans or diary entries unless explicitly granted write access.
 
 ### Access levels
 
 | Level | Can see | Can do |
 |---|---|---|
-| **Read-only** | All class content (diary, plans, curriculum, materials) | Nothing — view only |
+| **Read-only** | All class content (diary, plans, Lehrplan, materials) | Nothing — view only |
 | **Diary write** | All class content | Add diary entries and upload materials; cannot modify plans |
 | **Full write** | All class content | Everything the primary teacher can do, except revoke other people's access |
 
@@ -549,9 +549,9 @@ These are forward-looking ideas for how Chalkdust could deepen its role as an ac
 
 ### Proactive lesson gap detection
 
-The AI periodically scans the curriculum topic list and the diary. When it detects topics that were planned but never marked as completed, or topics that are overdue based on the school calendar, it surfaces a gentle alert: "You haven't covered 'Bruchrechnung — Erweiterung' yet and it was last scheduled 3 weeks ago. Want to plan a lesson for it?"
+The AI periodically scans the Lehrplan topic list and the diary. When it detects topics that were planned but never marked as completed, or topics that are overdue based on the school calendar, it surfaces a gentle alert: "You haven't covered 'Bruchrechnung — Erweiterung' yet and it was last scheduled 3 weeks ago. Want to plan a lesson for it?"
 
-This turns the curriculum from a passive checklist into an active scheduling partner.
+This turns the Lehrplan from a passive checklist into an active scheduling partner.
 
 ### Exam-to-diary loop
 
@@ -567,7 +567,7 @@ This gradually shifts the teacher's workflow from AI-generated-everything toward
 
 ### End-of-year narrative report
 
-At end-of-year, the AI can generate a full narrative report for the class — not just transition notes for the next teacher, but a comprehensive summary the teacher themselves can use: what was taught, how far through the curriculum they got, where the class excelled, where they struggled, and notable individual observations from the diary. The teacher reviews and edits it, and it becomes part of the class archive.
+At end-of-year, the AI can generate a full narrative report for the class — not just transition notes for the next teacher, but a comprehensive summary the teacher themselves can use: what was taught, how far through the Lehrplan they got, where the class excelled, where they struggled, and notable individual observations from the diary. The teacher reviews and edits it, and it becomes part of the class archive.
 
 This is the teacher's memory of the year — structured, searchable, and ready to hand off.
 
@@ -575,7 +575,7 @@ This is the teacher's memory of the year — structured, searchable, and ready t
 
 A teacher often teaches the same subject to multiple classes at the same grade level (e.g. Mathematik to 5a and 5b). Chalkdust can surface patterns across those classes: "You covered Bruchrechnung 2 lessons faster with 5b than 5a. 5a also has more diary entries marked 'deviated' for this topic." These insights help the teacher adjust pacing and approach before the same issue repeats.
 
-### Curriculum-aware homework coherence
+### Lehrplan-aware homework coherence
 
 When the AI suggests homework, it checks the recent diary: if the last three lessons all had homework, it suggests a lighter assignment. If the upcoming week has a school event, it avoids heavy homework for the days before. Small context-aware adjustments that a good teacher makes naturally — but that take time to remember.
 
@@ -747,7 +747,7 @@ createdAt, updatedAt
 ## 14. Implementation Phases
 
 ### Phase 0 — Foundation (current state)
-- Classes, curriculum, lesson planning, diary, snippets (Phase 1) all built
+- Classes, Lehrplan, lesson planning, diary, snippets (Phase 1) all built
 - Hardcoded teacher, no auth
 - Local file storage
 
@@ -765,7 +765,7 @@ Required before shared access and production deployment:
 
 ### Phase 3 — Exam Generator
 - `exams` table and Drizzle schema
-- Exam generation AI agent (context: diary + curriculum coverage + teacher config)
+- Exam generation AI agent (context: diary + Lehrplan coverage + teacher config)
 - Exam review and refinement UI (chat-based, same pattern as lesson plans)
 - PDF export (student version + teacher version with solutions)
 

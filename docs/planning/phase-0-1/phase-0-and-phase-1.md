@@ -48,7 +48,7 @@ The following is an itemized audit based on implementation status fields in VISI
 | Planning UI (form + plan view + chat) | Built | Split-panel interface on `/classes/:id/plan` |
 | Structured output with Zod schema | Built | `generateObject` via Vercel AI SDK |
 | Tool-use refinement | Built | `streamText` with 9 plan-editing tools |
-| Context assembly (curriculum + diary + predecessor) | Built | `src/lib/ai/context.ts` — see architecture doc |
+| Context assembly (Lehrplan + diary + predecessor) | Built | `src/lib/ai/context.ts` — see architecture doc |
 | Diary auto-creation on plan approval | Built | `progressStatus: "planned"` entry created |
 | File upload to diary entries | Built | Materials with `source: "uploaded"` |
 | AI observability traces | Built | `ai_traces` table |
@@ -99,7 +99,7 @@ These are not gaps to close in Phase 0. They are documented here so the constrai
 
 **Hardcoded teacher ID**: All queries use a hardcoded teacher ID. This is intentional until Phase 2 (Authentication). No workarounds or partial auth should be added in Phase 0 or Phase 1 — a partial auth state is worse than a clean hardcode because it creates false security assumptions. The hardcoded ID should be the single obvious constant in one place (`src/lib/constants.ts` or similar), not scattered across query files.
 
-**Local file storage**: Uploaded materials (curriculum PDFs, diary attachments) are stored on the local filesystem. This is fine for development and early testing. Not production-safe. Deferred to Phase 2 or Phase 3 when a deployment target is chosen (Vercel + R2 is the likely path).
+**Local file storage**: Uploaded materials (Lehrplan PDFs, diary attachments) are stored on the local filesystem. This is fine for development and early testing. Not production-safe. Deferred to Phase 2 or Phase 3 when a deployment target is chosen (Vercel + R2 is the likely path).
 
 ---
 

@@ -19,12 +19,12 @@ interface CurriculumExpected {
 }
 
 evalite<CurriculumInput, CurriculumTopicExtraction, CurriculumExpected>(
-  "Curriculum Extraction",
+  "Lehrplan Extraction",
   {
     data: (): Array<{ input: CurriculumInput; expected: CurriculumExpected }> => [
       {
         input: {
-          text: `Kerncurriculum Mathematik – Jahrgangsstufe 5/6
+          text: `Lehrplan Mathematik – Jahrgangsstufe 5/6
 
 Leitidee Zahlen und Operationen
 Die Schülerinnen und Schüler lernen natürliche Zahlen, ganze Zahlen und einfache Brüche kennen und rechnen damit.
@@ -51,7 +51,7 @@ Thema 9: Grundbegriffe der Wahrscheinlichkeit`,
       },
       {
         input: {
-          text: `Kerncurriculum Deutsch – Jahrgangsstufe 7/8
+          text: `Lehrplan Deutsch – Jahrgangsstufe 7/8
 
 Kompetenzbereich Sprechen und Zuhören
 Thema 1: Argumentieren und Diskutieren – Standpunkte begründen und vertreten

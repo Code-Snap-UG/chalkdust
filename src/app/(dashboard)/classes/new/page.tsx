@@ -169,7 +169,7 @@ function NewClassWizard() {
           {step === 1
             ? "Klassendetails"
             : step === 2
-              ? "Kerncurriculum hochladen"
+              ? "Lehrplan hochladen"
               : "Themen überprüfen"}
         </p>
       </div>
@@ -279,9 +279,9 @@ function NewClassWizard() {
       {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Kerncurriculum hochladen</CardTitle>
+            <CardTitle>Lehrplan hochladen</CardTitle>
             <CardDescription>
-              Lade das Kerncurriculum als PDF hoch. Die KI extrahiert
+              Lade den Lehrplan als PDF hoch. Die KI extrahiert
               automatisch die Themen und Kompetenzbereiche.
             </CardDescription>
           </CardHeader>
@@ -302,7 +302,7 @@ function NewClassWizard() {
                       PDF-Datei hier hochladen
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Kerncurriculum als PDF (max. 10 MB)
+                      Lehrplan als PDF (max. 10 MB)
                     </p>
                   </div>
                   <label>
@@ -325,7 +325,7 @@ function NewClassWizard() {
                 Zurück
               </Button>
               <Button variant="ghost" onClick={() => handleFinish()}>
-                Ohne Curriculum fortfahren
+                Ohne Lehrplan fortfahren
               </Button>
             </div>
           </CardContent>
@@ -337,7 +337,7 @@ function NewClassWizard() {
           <CardHeader>
             <CardTitle>Extrahierte Themen überprüfen</CardTitle>
             <CardDescription>
-              Die KI hat {topics.length} Themen aus dem Kerncurriculum
+              Die KI hat {topics.length} Themen aus dem Lehrplan
               extrahiert. Du kannst sie bearbeiten, umsortieren oder ergänzen.
             </CardDescription>
           </CardHeader>

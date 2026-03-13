@@ -328,7 +328,7 @@ export async function assembleContext(
       const relevantTopics = topics.slice(start, end);
 
       parts.push(
-        `## Kerncurriculum (relevanter Ausschnitt)\n\n${relevantTopics
+        `## Lehrplan (relevanter Ausschnitt)\n\n${relevantTopics
           .map(
             (t) =>
               `- **${t.title}**: ${t.description || "Keine Beschreibung"} (Kompetenzbereich: ${t.competencyArea || "Allgemein"})`
@@ -337,7 +337,7 @@ export async function assembleContext(
       );
     } else {
       parts.push(
-        `## Kerncurriculum (Themenübersicht)\n\n${topics
+        `## Lehrplan (Themenübersicht)\n\n${topics
           .map(
             (t) =>
               `- **${t.title}**: ${t.description || "Keine Beschreibung"}`
