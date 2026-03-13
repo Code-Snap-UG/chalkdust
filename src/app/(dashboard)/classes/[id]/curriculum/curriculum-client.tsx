@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { updateCurriculumTopics } from "@/lib/actions/curriculum";
 import {
   BookOpen,
@@ -141,25 +142,43 @@ export function CurriculumClient({ classGroupId, curriculum, topics }: Props) {
                   <GripVertical className="size-4" />
                 </button>
               </div>
-              <div className="flex-1 space-y-2">
-                <Input
-                  value={topic.title}
-                  onChange={(e) => updateTopic(i, "title", e.target.value)}
-                  placeholder="Thema"
-                  className="font-medium"
-                />
-                <Input
-                  value={topic.description}
-                  onChange={(e) => updateTopic(i, "description", e.target.value)}
-                  placeholder="Beschreibung (optional)"
-                  className="text-sm"
-                />
-                <Input
-                  value={topic.competencyArea}
-                  onChange={(e) => updateTopic(i, "competencyArea", e.target.value)}
-                  placeholder="Kompetenzbereich (optional)"
-                  className="text-xs"
-                />
+              <div className="flex-1 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor={`title-${i}`} className="text-xs">
+                    Titel
+                  </Label>
+                  <Input
+                    id={`title-${i}`}
+                    value={topic.title}
+                    onChange={(e) => updateTopic(i, "title", e.target.value)}
+                    placeholder="z. B. Lineare Gleichungen"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`description-${i}`} className="text-xs">
+                    Beschreibung
+                  </Label>
+                  <Input
+                    id={`description-${i}`}
+                    value={topic.description}
+                    onChange={(e) => updateTopic(i, "description", e.target.value)}
+                    placeholder="Kurze Inhaltsbeschreibung (optional)"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`competency-${i}`} className="text-xs">
+                    Kompetenzbereich
+                  </Label>
+                  <Input
+                    id={`competency-${i}`}
+                    value={topic.competencyArea}
+                    onChange={(e) => updateTopic(i, "competencyArea", e.target.value)}
+                    placeholder="z. B. Algebra (optional)"
+                    className="text-xs"
+                  />
+                </div>
               </div>
               <button
                 onClick={() => removeTopic(i)}

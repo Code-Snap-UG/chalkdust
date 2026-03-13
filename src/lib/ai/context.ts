@@ -148,6 +148,59 @@ function formatPlannedEntry(d: DiaryRow, plan: PlanRow | null): string {
 // Reihe context builder
 // ---------------------------------------------------------------------------
 
+/**
+ * Builds a pacing block for the "Aktuelle Stunde" section.
+ * Instead of hard-coded role labels, this gives the LLM the raw data it needs
+ * to reason about proportional progress: position, total, remaining runway,
+ * the milestone's end goals, and a pacing mandate that scales with lesson count.
+ */
+function buildProgressionBlock(
+  position: number,
+  total: number,
+  milestoneGoals: string[]
+): string {
+  const remaining = total - position;
+  const lessonWord = (n: number) => (n === 1 ? "Stunde" : "Stunden");
+
+  const lines: string[] = [
+    `Stunde ${position} von ${total} — noch ${remaining} ${lessonWord(remaining)} nach dieser bis zum Ende dieses Meilensteins.`,
+  ];
+
+  if (milestoneGoals.length > 0) {
+    lines.push(``);
+    lines.push(
+      `Ziele des Meilensteins (müssen erst am Ende von Stunde ${total} vollständig erreicht sein):`
+    );
+    milestoneGoals.forEach((g) => lines.push(`- ${g}`));
+  }
+
+  lines.push(``);
+
+  if (total === 1) {
+    lines.push(
+      `Pacing: Nur eine Stunde für diesen Meilenstein — alle wesentlichen Ziele kompakt und fokussiert behandeln.`
+    );
+  } else if (total <= 3) {
+    lines.push(
+      `Pacing: ${total} Stunden — zügige Progression. Pro Stunde ca. ${Math.round(100 / total)}% der Meilensteinziele abdecken. Knappe, fokussierte Schritte ohne Umwege.`
+    );
+  } else if (total <= 6) {
+    lines.push(
+      `Pacing: ${total} Stunden — ausgewogene Progression. Pro Stunde ca. ${Math.round(100 / total)}% der Meilensteinziele. Raum für Übung und Differenzierung, aber klarer Vorwärtsdrang.`
+    );
+  } else {
+    lines.push(
+      `Pacing: ${total} Stunden — großzügige Progression. Pro Stunde ca. ${Math.round(100 / total)}% der Meilensteinziele. Viel Raum für tiefe Übung, Differenzierung und Fehlerkorrektur. Themen dürfen über mehrere Stunden ausgedehnt werden.`
+    );
+  }
+
+  lines.push(
+    `Wichtig: Decke in DIESER Stunde nicht alle Meilensteinziele ab — plane nur den nächsten proportionalen Schritt.`
+  );
+
+  return lines.join("\n");
+}
+
 async function buildSeriesContext(
   seriesId: string,
   currentMilestoneId?: string
@@ -212,13 +265,15 @@ async function buildSeriesContext(
     }).length;
     const allDone =
       mPlans.length > 0 && mDone === mPlans.length && m.status !== "pending";
-    const isCurrent = m.id === currentMilestoneId || (!allDone && m.status !== "completed");
+    const isCurrent =
+      m.id === currentMilestoneId || (!allDone && m.status !== "completed");
 
-    const statusLabel = allDone || m.status === "completed"
-      ? "Abgeschlossen"
-      : isCurrent
-        ? "Aktuell"
-        : "Ausstehend";
+    const statusLabel =
+      allDone || m.status === "completed"
+        ? "Abgeschlossen"
+        : isCurrent
+          ? "Aktuell"
+          : "Ausstehend";
 
     const goals = Array.isArray(m.learningGoals)
       ? (m.learningGoals as { text: string }[])
@@ -226,19 +281,62 @@ async function buildSeriesContext(
           .join(", ")
       : "";
 
-    lines.push(`${i + 1}. [${statusLabel}] ${m.title} — ${m.description || ""}`);
+    lines.push(
+      `${i + 1}. [${statusLabel}] ${m.title} — ${m.description || ""}`
+    );
     if (goals) {
       lines.push(`   Ziele: ${goals}`);
     }
 
     if (mPlans.length > 0) {
-      const summaries = mPlans.map((p) => {
-        const d = diaryByPlanId.get(p.id);
-        const status = d?.progressStatus || p.status;
-        const summary = d?.actualSummary || d?.plannedSummary || p.topic;
-        return `${p.lessonDate || "kein Datum"}: [${status}] ${summary}`;
-      });
-      lines.push(`   Bisherige Stunden: ${summaries.join("; ")}`);
+      if (m.id === currentMilestoneId) {
+        // Rich format: each lesson in the current milestone gets its own line
+        // with the actual diary outcome (if taught) or a planning flag (if not).
+        lines.push(`   Bisherige Stunden in diesem Meilenstein:`);
+        for (const p of mPlans) {
+          const d = diaryByPlanId.get(p.id);
+          const dateLabel = p.lessonDate || "kein Datum";
+          if (!d || d.progressStatus === "planned") {
+            const summary = buildPlanSummary(p);
+            lines.push(
+              `   - ⚠ ${dateLabel}: [Geplant, noch nicht durchgeführt] ${summary}`
+            );
+          } else if (d.progressStatus === "completed") {
+            const summary = !isVagueSummary(d.actualSummary)
+              ? d.actualSummary!
+              : buildPlanSummary(p);
+            lines.push(`   - ${dateLabel}: [Abgeschlossen] ${summary}`);
+          } else if (d.progressStatus === "partial") {
+            const covered = !isVagueSummary(d.actualSummary)
+              ? d.actualSummary!
+              : buildPlanSummary(p);
+            const note = d.teacherNotes
+              ? `Hinweis der Lehrkraft: ${d.teacherNotes}`
+              : "Stunde wurde nicht zu Ende geführt.";
+            lines.push(
+              `   - ${dateLabel}: [Teilweise durchgeführt] ${covered} — NICHT ABGESCHLOSSEN: ${note}`
+            );
+          } else if (d.progressStatus === "deviated") {
+            const planned = buildPlanSummary(p);
+            const actual = d.actualSummary || "Keine Angabe";
+            const note = d.teacherNotes
+              ? ` Hinweis: ${d.teacherNotes}`
+              : "";
+            lines.push(
+              `   - ${dateLabel}: [Abgewichen] Geplant: ${planned} | Tatsächlich: ${actual}${note}`
+            );
+          }
+        }
+      } else {
+        // Brief one-liner for non-current milestones
+        const summaries = mPlans.map((p) => {
+          const d = diaryByPlanId.get(p.id);
+          const status = d?.progressStatus || p.status;
+          const summary = d?.actualSummary || d?.plannedSummary || p.topic;
+          return `${p.lessonDate || "kein Datum"}: [${status}] ${summary}`;
+        });
+        lines.push(`   Bisherige Stunden: ${summaries.join("; ")}`);
+      }
     }
   }
 
@@ -248,12 +346,67 @@ async function buildSeriesContext(
       const mPlans = seriesPlans.filter(
         (p) => p.milestoneId === currentMilestoneId
       );
+      const position = mPlans.length + 1;
+      const total = current.estimatedLessons ?? position;
+
+      const milestoneGoals = Array.isArray(current.learningGoals)
+        ? (current.learningGoals as { text: string }[])
+            .map((g) => g.text)
+            .filter(Boolean)
+        : [];
+
       lines.push(``);
       lines.push(`### Aktuelle Stunde:`);
       lines.push(`Meilenstein: ${current.title}`);
-      lines.push(
-        `Position: Stunde ${mPlans.length + 1} von ${current.estimatedLessons} in diesem Meilenstein`
-      );
+      lines.push(buildProgressionBlock(position, total, milestoneGoals));
+
+      // Build explicit constraint blocks from already-taught lessons in this milestone
+      const taughtPlans = mPlans.filter((p) => {
+        const d = diaryByPlanId.get(p.id);
+        return d && d.progressStatus !== "planned";
+      });
+
+      if (taughtPlans.length > 0) {
+        const notRepeat: string[] = [];
+        const catchUp: string[] = [];
+        const adapt: string[] = [];
+
+        for (const p of taughtPlans) {
+          const d = diaryByPlanId.get(p.id)!;
+          if (d.progressStatus === "completed") {
+            const summary = !isVagueSummary(d.actualSummary)
+              ? d.actualSummary!
+              : buildPlanSummary(p);
+            notRepeat.push(summary);
+          } else if (d.progressStatus === "partial") {
+            const covered = !isVagueSummary(d.actualSummary)
+              ? d.actualSummary!
+              : buildPlanSummary(p);
+            notRepeat.push(`(teilweise) ${covered}`);
+            const leftover = d.teacherNotes || "Stunde wurde nicht zu Ende geführt";
+            catchUp.push(leftover);
+          } else if (d.progressStatus === "deviated") {
+            const actual = d.actualSummary || "Stark von der Planung abgewichen";
+            adapt.push(actual);
+          }
+        }
+
+        if (notRepeat.length > 0) {
+          lines.push(``);
+          lines.push(`NICHT WIEDERHOLEN (bereits behandelt):`);
+          notRepeat.forEach((c) => lines.push(`- ${c}`));
+        }
+        if (catchUp.length > 0) {
+          lines.push(``);
+          lines.push(`AUFHOLEN (optional — von unvollständigen Vorstunden):`);
+          catchUp.forEach((c) => lines.push(`- ${c}`));
+        }
+        if (adapt.length > 0) {
+          lines.push(``);
+          lines.push(`ANPASSEN (Vorstunde ist abgewichen — plane entsprechend):`);
+          adapt.forEach((c) => lines.push(`- ${c}`));
+        }
+      }
     }
   }
 
@@ -355,10 +508,16 @@ export async function assembleContext(
     }
   }
 
+  // When a series is active, its lessons are already shown in the series context block.
+  // Exclude them from the general diary sections to avoid redundancy.
+  const diaryForGeneral = seriesId
+    ? recentDiary.filter((r) => r.plan?.seriesId !== seriesId)
+    : recentDiary;
+
   // Partition diary entries in a single pass
   const taught: typeof recentDiary = [];
   const planned: typeof recentDiary = [];
-  for (const r of recentDiary) {
+  for (const r of diaryForGeneral) {
     if (r.diary.progressStatus === "planned") {
       planned.push(r);
     } else {
