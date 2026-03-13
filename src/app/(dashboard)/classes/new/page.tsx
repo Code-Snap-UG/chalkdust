@@ -70,6 +70,8 @@ function NewClassWizard() {
       try {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("grade", grade);
+        formData.append("subject", subject);
 
         const res = await fetch("/api/curriculum/upload", {
           method: "POST",

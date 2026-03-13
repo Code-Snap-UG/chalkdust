@@ -343,56 +343,6 @@ export const appLogs = pgTable("app_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// AI Trace Observability
-
-export const aiTraces = pgTable("ai_traces", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  traceGroupId: uuid("trace_group_id"),
-
-  teacherId: uuid("teacher_id").references(() => teachers.id),
-  agentMode: varchar("agent_mode", { length: 50 }).notNull(),
-
-  provider: varchar("provider", { length: 50 }).notNull(),
-  modelId: varchar("model_id", { length: 100 }).notNull(),
-
-  inputParams: jsonb("input_params"),
-  assembledContext: text("assembled_context"),
-  systemPrompt: text("system_prompt"),
-  userPrompt: text("user_prompt"),
-  messages: jsonb("messages"),
-
-  output: jsonb("output"),
-  toolCalls: jsonb("tool_calls"),
-  finishReason: varchar("finish_reason", { length: 50 }),
-
-  promptTokens: integer("prompt_tokens"),
-  completionTokens: integer("completion_tokens"),
-  totalTokens: integer("total_tokens"),
-  durationMs: integer("duration_ms"),
-
-  status: varchar("status", { length: 20 }).notNull(),
-  errorMessage: text("error_message"),
-
-  lessonPlanId: uuid("lesson_plan_id").references(() => lessonPlans.id),
-  classGroupId: uuid("class_group_id").references(() => classGroups.id),
-
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const aiTracesRelations = relations(aiTraces, ({ one }) => ({
-  teacher: one(teachers, {
-    fields: [aiTraces.teacherId],
-    references: [teachers.id],
-  }),
-  lessonPlan: one(lessonPlans, {
-    fields: [aiTraces.lessonPlanId],
-    references: [lessonPlans.id],
-  }),
-  classGroup: one(classGroups, {
-    fields: [aiTraces.classGroupId],
-    references: [classGroups.id],
-  }),
-}));
 
 export const lessonSnippetsRelations = relations(
   lessonSnippets,

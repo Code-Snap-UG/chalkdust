@@ -7,7 +7,7 @@ import {
   curriculumTopicExtractionSchema,
   type CurriculumTopicExtraction,
 } from "@/lib/ai/schemas";
-import { curriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
+import { getCurriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
 import { tracedGenerateObject } from "@/lib/ai/trace";
 import { getCurrentTeacherId } from "@/lib/auth";
 import { withLogging } from "@/lib/logger";
@@ -15,6 +15,8 @@ import { withLogging } from "@/lib/logger";
 export const POST = withLogging("api.curriculum.upload", async (request) => {
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
+  const grade = (formData.get("grade") as string)?.trim() ?? undefined;
+  const subject = (formData.get("subject") as string)?.trim() ?? undefined;
 
   if (!file || file.type !== "application/pdf") {
     return NextResponse.json(
@@ -47,7 +49,7 @@ export const POST = withLogging("api.curriculum.upload", async (request) => {
     );
   }
 
-  const truncatedText = parsedText.slice(0, 30000);
+  const truncatedText = parsedText.slice(0, 200_000);
   const userPrompt = `Hier ist der Text des Lehrplans:\n\n${truncatedText}`;
 
   const teacherId = await getCurrentTeacherId();
@@ -56,13 +58,13 @@ export const POST = withLogging("api.curriculum.upload", async (request) => {
     {
       model: getModel("fast"),
       schema: curriculumTopicExtractionSchema,
-      system: curriculumExtractionPrompt,
+      system: getCurriculumExtractionPrompt(grade, subject),
       prompt: userPrompt,
     },
     {
       agentMode: "curriculum_extraction",
       teacherId,
-      inputParams: { fileName: file.name, textLength: truncatedText.length },
+      inputParams: { fileName: file.name, textLength: truncatedText.length, grade, subject },
     },
   );
 

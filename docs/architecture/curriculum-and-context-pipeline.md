@@ -26,9 +26,9 @@ The pipeline has two distinct, decoupled phases:
 
 1. **File ingestion** — The uploaded PDF is saved to `public/uploads/curricula/` and its text is extracted using `pdf-parse`.
 
-2. **Truncation** — The raw extracted text is capped at **30,000 characters** before being sent to the model. This guards against token limits on very large documents.
+2. **Truncation** — The raw extracted text is capped at **200,000 characters** before being sent to the model. This guards against token limits on very large documents.
 
-3. **AI extraction** — The truncated text is passed to the high-tier model (`gpt-4o` / `claude-sonnet`) with `curriculumExtractionPrompt` as the system prompt. The model is instructed to identify all teaching topics and return them as structured data via `generateObject`.
+3. **AI extraction** — The truncated text is passed to the high-tier model (`gpt-4o` / `claude-sonnet`) with `getCurriculumExtractionPrompt(grade?, subject?)` as the system prompt. When `grade` and optionally `subject` are provided (from the new-class wizard), the prompt instructs the model to extract **only topics relevant to that Jahrgangsstufe** — many Lehrpläne span multiple grades (e.g. 5–11), and the model filters to sections that explicitly mention the target grade. The model returns structured data via `generateObject`.
 
    The extraction schema (`curriculumTopicExtractionSchema`) expects each topic to have:
    - `title` — a short, descriptive name
@@ -114,7 +114,7 @@ PDF upload
   │
   ├─ pdf-parse → raw text (stored as parsedContent, never re-used in prompts)
   │
-  └─ AI extraction (high model, 30k char cap)
+  └─ AI extraction (high model, 200k char cap)
        │
        └─ structured topics → curriculumTopics table (title, description, competencyArea, sortOrder)
                                          │

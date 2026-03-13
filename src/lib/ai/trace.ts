@@ -2,11 +2,11 @@ import {
   generateText,
   streamText,
   Output,
-  type LanguageModelUsage,
 } from "ai";
-import { db } from "@/lib/db";
-import { aiTraces } from "@/lib/db/schema";
+import { after } from "next/server";
+import { propagateAttributes, setActiveTraceIO } from "@langfuse/tracing";
 import { AI_MOCK_ENABLED, getMockObject } from "./mocks";
+import { langfuseSpanProcessor } from "@/instrumentation";
 
 export type AgentMode =
   | "plan_generation"
@@ -25,64 +25,6 @@ export interface TraceMetadata {
   assembledContext?: string;
 }
 
-interface TraceRow {
-  agentMode: AgentMode;
-  provider: string;
-  modelId: string;
-  teacherId?: string;
-  classGroupId?: string;
-  lessonPlanId?: string;
-  traceGroupId?: string;
-  inputParams?: Record<string, unknown>;
-  assembledContext?: string;
-  systemPrompt?: string;
-  userPrompt?: string;
-  messages?: unknown;
-  output?: unknown;
-  toolCalls?: unknown;
-  finishReason?: string;
-  promptTokens?: number;
-  completionTokens?: number;
-  totalTokens?: number;
-  durationMs?: number;
-  status: "success" | "error";
-  errorMessage?: string;
-}
-
-function extractTokens(usage: LanguageModelUsage) {
-  return {
-    promptTokens: usage.inputTokens ?? undefined,
-    completionTokens: usage.outputTokens ?? undefined,
-    totalTokens: usage.totalTokens ?? undefined,
-  };
-}
-
-async function saveTrace(row: TraceRow) {
-  await db.insert(aiTraces).values({
-    agentMode: row.agentMode,
-    provider: row.provider,
-    modelId: row.modelId,
-    teacherId: row.teacherId,
-    classGroupId: row.classGroupId,
-    lessonPlanId: row.lessonPlanId,
-    traceGroupId: row.traceGroupId,
-    inputParams: row.inputParams,
-    assembledContext: row.assembledContext,
-    systemPrompt: row.systemPrompt,
-    userPrompt: row.userPrompt,
-    messages: row.messages,
-    output: row.output,
-    toolCalls: row.toolCalls,
-    finishReason: row.finishReason,
-    promptTokens: row.promptTokens,
-    completionTokens: row.completionTokens,
-    totalTokens: row.totalTokens,
-    durationMs: row.durationMs,
-    status: row.status,
-    errorMessage: row.errorMessage,
-  });
-}
-
 type GenerateObjectOptions = Omit<Parameters<typeof generateText>[0], "output"> & {
   schema: Parameters<typeof Output.object>[0]["schema"];
 };
@@ -94,107 +36,69 @@ export async function tracedGenerateObject<RESULT>(
   const { schema, ...textOptions } = generateOptions;
 
   if (AI_MOCK_ENABLED) {
-    const object = getMockObject(traceMetadata.agentMode) as RESULT;
-    saveTrace({
-      ...traceMetadata,
-      provider: "mock",
-      modelId: "mock",
-      systemPrompt:
-        typeof generateOptions.system === "string"
-          ? generateOptions.system
-          : undefined,
-      userPrompt:
-        typeof generateOptions.prompt === "string"
-          ? generateOptions.prompt
-          : undefined,
-      output: object as unknown,
-      durationMs: 0,
-      finishReason: "stop",
-      status: "success",
-    }).catch(console.error);
-    return { object };
+    return { object: getMockObject(traceMetadata.agentMode) as RESULT };
   }
 
-  const start = Date.now();
-  try {
-    const result = await generateText({
-      ...(textOptions as Parameters<typeof generateText>[0]),
-      output: Output.object({ schema }),
-    });
-    const durationMs = Date.now() - start;
-    const tokens = extractTokens(result.usage);
+  const result = await propagateAttributes(
+    getLangfuseAttributes(traceMetadata),
+    () =>
+      generateText({
+        ...(textOptions as Parameters<typeof generateText>[0]),
+        output: Output.object({ schema }),
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: traceMetadata.agentMode,
+        },
+        onFinish: ({ text }) => {
+          setActiveTraceIO({
+            input: {
+              ...(typeof textOptions.system === "string" && { system: textOptions.system }),
+              ...(typeof textOptions.prompt === "string" && { prompt: textOptions.prompt }),
+              ...traceMetadata.inputParams,
+            },
+            output: { text },
+          });
+        },
+      }),
+  );
 
-    saveTrace({
-      ...traceMetadata,
-      provider: result.response.modelId?.split(":")[0] ?? "unknown",
-      modelId: result.response.modelId ?? "unknown",
-      systemPrompt:
-        typeof generateOptions.system === "string"
-          ? generateOptions.system
-          : undefined,
-      userPrompt:
-        typeof generateOptions.prompt === "string"
-          ? generateOptions.prompt
-          : undefined,
-      output: result.output as unknown,
-      ...tokens,
-      durationMs,
-      finishReason: result.finishReason,
-      status: "success",
-    }).catch(console.error);
+  after(() => langfuseSpanProcessor.forceFlush());
 
-    return { object: result.output as RESULT };
-  } catch (error) {
-    const durationMs = Date.now() - start;
-    saveTrace({
-      ...traceMetadata,
-      provider: "unknown",
-      modelId: "unknown",
-      systemPrompt:
-        typeof generateOptions.system === "string"
-          ? generateOptions.system
-          : undefined,
-      userPrompt:
-        typeof generateOptions.prompt === "string"
-          ? generateOptions.prompt
-          : undefined,
-      durationMs,
-      status: "error",
-      errorMessage: String(error),
-    }).catch(console.error);
-    throw error;
-  }
+  return { object: result.output as RESULT };
 }
 
 /**
- * Build an `onFinish` callback that persists an AI trace row.
+ * Returns the Langfuse propagation attributes for a given trace metadata
+ * object. Pass these to `propagateAttributes()` around a `streamText` call
+ * so that user/session context is attached to the Langfuse trace.
+ */
+export function getLangfuseAttributes(traceMetadata: TraceMetadata) {
+  return {
+    userId: traceMetadata.teacherId,
+    sessionId: traceMetadata.traceGroupId ?? traceMetadata.lessonPlanId,
+    tags: [traceMetadata.agentMode],
+    metadata: Object.fromEntries(
+      Object.entries({
+        agentMode: traceMetadata.agentMode,
+        classGroupId: traceMetadata.classGroupId,
+        lessonPlanId: traceMetadata.lessonPlanId,
+      }).filter(([, v]) => v !== undefined),
+    ) as Record<string, string>,
+  };
+}
+
+/**
+ * Build an `onFinish` callback that sets Langfuse trace I/O.
  * Attach this to a `streamText` call's `onFinish` option.
  */
 export function createTracedOnFinish(
   traceMetadata: TraceMetadata,
-  opts: { systemPrompt?: string; messages?: unknown; startTime: number },
+  opts: { messages?: unknown },
 ): (event: any) => Promise<void> {
   return async (event) => {
-    const durationMs = Date.now() - opts.startTime;
-    const tokens = extractTokens(event.totalUsage);
-
-    const toolCallData =
-      event.toolCalls?.length || event.toolResults?.length
-        ? { calls: event.toolCalls, results: event.toolResults }
-        : undefined;
-
-    saveTrace({
-      ...traceMetadata,
-      provider: event.model?.provider ?? "unknown",
-      modelId: event.model?.modelId ?? "unknown",
-      systemPrompt: opts.systemPrompt,
-      messages: opts.messages,
+    setActiveTraceIO({
+      input: opts.messages,
       output: { text: event.text },
-      toolCalls: toolCallData,
-      ...tokens,
-      durationMs,
-      finishReason: event.finishReason,
-      status: "success",
-    }).catch(console.error);
+    });
   };
 }

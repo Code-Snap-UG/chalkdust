@@ -5,15 +5,18 @@ import {
   simulateReadableStream,
   type UIMessage,
 } from "ai";
+import { after } from "next/server";
 import { MockLanguageModelV3 } from "ai/test";
 import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
 import { z } from "zod";
+import { propagateAttributes } from "@langfuse/tracing";
 import { getModel } from "@/lib/ai";
 import { planRefinementSystemPrompt } from "@/lib/ai/prompts/plan-refinement";
 import { updateLessonPlan, getLessonPlan } from "@/lib/actions/lesson-plans";
-import { createTracedOnFinish } from "@/lib/ai/trace";
+import { createTracedOnFinish, getLangfuseAttributes } from "@/lib/ai/trace";
 import { AI_MOCK_ENABLED, MOCK_CHAT_RESPONSE } from "@/lib/ai/mocks";
 import { getCurrentTeacherId } from "@/lib/auth";
+import { langfuseSpanProcessor } from "@/instrumentation";
 import type {
   LessonPlanOutput,
   TimelinePhase,
@@ -67,7 +70,6 @@ ${live.materials.map((m, i) => `${i}. ${m.title} (${m.type}): ${m.description}`)
 Hausaufgaben: ${currentPlan.homework || "Keine"}`;
 
   const systemPrompt = `${planRefinementSystemPrompt}\n\n${planContext}`;
-  const startTime = Date.now();
 
   const teacherId = await getCurrentTeacherId();
 
@@ -78,7 +80,7 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
       classGroupId: currentPlan.classGroupId,
       lessonPlanId,
     },
-    { systemPrompt, messages, startTime },
+    { messages },
   );
 
   if (AI_MOCK_ENABLED) {
@@ -112,12 +114,26 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
     return mockResult.toUIMessageStreamResponse();
   }
 
-  const result = streamText({
-    model: getModel("fast"),
-    system: systemPrompt,
-    messages: await convertToModelMessages(messages),
-    onFinish,
-    tools: {
+  const modelMessages = await convertToModelMessages(messages);
+
+  const traceAttrs = getLangfuseAttributes({
+    agentMode: "plan_refinement",
+    teacherId,
+    classGroupId: currentPlan.classGroupId,
+    lessonPlanId,
+  });
+
+  const result = await propagateAttributes(traceAttrs, () =>
+    streamText({
+      model: getModel("fast"),
+      system: systemPrompt,
+      messages: modelMessages,
+      onFinish,
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: "plan_refinement",
+      },
+      tools: {
       update_plan_field: {
         description:
           "Update a top-level field of the lesson plan (topic or homework)",
@@ -269,8 +285,11 @@ Hausaufgaben: ${currentPlan.homework || "Keine"}`;
         },
       },
     },
-    stopWhen: stepCountIs(5),
-  });
+      stopWhen: stepCountIs(5),
+    }),
+  );
+
+  after(() => langfuseSpanProcessor.forceFlush());
 
   return result.toUIMessageStreamResponse();
 }

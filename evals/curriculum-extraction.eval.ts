@@ -1,6 +1,6 @@
 import { evalite } from "evalite";
 import { generateText, Output } from "ai";
-import { curriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
+import { getCurriculumExtractionPrompt } from "@/lib/ai/prompts/curriculum-extraction";
 import {
   curriculumTopicExtractionSchema,
   type CurriculumTopicExtraction,
@@ -9,6 +9,8 @@ import { getEvalModel } from "@/lib/ai/eval";
 
 interface CurriculumInput {
   text: string;
+  grade?: string;
+  subject?: string;
 }
 
 interface CurriculumExpected {
@@ -42,6 +44,8 @@ Thema 7: Körper – Würfel, Quader und Zylinder
 Leitidee Daten und Zufall
 Thema 8: Daten erheben, darstellen und interpretieren (Diagramme, Häufigkeitstabellen)
 Thema 9: Grundbegriffe der Wahrscheinlichkeit`,
+          grade: "5",
+          subject: "Mathematik",
         },
         expected: {
           minTopics: 6,
@@ -70,6 +74,8 @@ Thema 8: Literarische Texte interpretieren – Kurzgeschichten
 Kompetenzbereich Sprache untersuchen
 Thema 9: Satzstrukturen und Satzglieder
 Thema 10: Wortarten und ihre Funktionen`,
+          grade: "7",
+          subject: "Deutsch",
         },
         expected: {
           minTopics: 7,
@@ -82,7 +88,7 @@ Thema 10: Wortarten und ihre Funktionen`,
       const { output } = await generateText({
         model: getEvalModel("fast"),
         output: Output.object({ schema: curriculumTopicExtractionSchema }),
-        system: curriculumExtractionPrompt,
+        system: getCurriculumExtractionPrompt(input.grade, input.subject),
         prompt: input.text,
       });
       return output;
