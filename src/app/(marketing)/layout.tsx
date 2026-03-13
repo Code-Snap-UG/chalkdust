@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function MarketingLayout({
   children,
@@ -10,13 +8,15 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="size-4" />
-            </div>
-            <span className="text-lg font-bold">Chalkdust</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="font-display text-[18px] font-bold italic leading-none text-primary tracking-tight">
+              cd
+            </span>
+            <span className="font-display text-lg font-bold tracking-tight">
+              Chalkdust
+            </span>
           </Link>
           <nav className="hidden items-center gap-6 sm:flex">
             <Link
@@ -39,7 +39,6 @@ export default function MarketingLayout({
             </Link>
           </nav>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link href="/dashboard">Anmelden</Link>
             </Button>
@@ -54,10 +53,10 @@ export default function MarketingLayout({
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <div className="flex size-6 items-center justify-center rounded bg-primary text-primary-foreground">
-                <GraduationCap className="size-3" />
-              </div>
-              <span className="text-sm font-semibold">Chalkdust</span>
+              <span className="font-display text-sm font-bold italic leading-none text-primary tracking-tight">
+                cd
+              </span>
+              <span className="font-display text-sm font-semibold tracking-tight">Chalkdust</span>
             </div>
             <p className="text-xs text-muted-foreground">
               © 2026 Chalkdust. Für Lehrkräfte, von Lehrkräften.

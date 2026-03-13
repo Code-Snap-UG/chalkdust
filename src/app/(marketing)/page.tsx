@@ -1,56 +1,28 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  BookOpen,
-  Calendar,
-  CheckCircle2,
-  GraduationCap,
-  LayoutDashboard,
-  Sparkles,
-  Star,
-  Zap,
-} from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 const features = [
   {
-    icon: Sparkles,
     title: "KI-gestützte Planung",
     description:
-      "Erstelle vollständige Unterrichtspläne in Sekunden. Unsere KI kennt Lehrpläne und passt sich deinem Unterrichtsstil an.",
-    color: "text-primary",
-    bg: "bg-primary/10",
+      "Erstelle vollständige Unterrichtspläne in Sekunden. Die KI kennt Lehrpläne und passt sich deinem Unterrichtsstil an.",
+    featured: true,
   },
   {
-    icon: LayoutDashboard,
     title: "Übersichtliches Dashboard",
     description:
-      "Behalte das gesamte Schuljahr im Blick. Verfolge Fortschritte, bevorstehende Stunden und Unterrichtszeiten auf einen Blick.",
-    color: "text-violet-600",
-    bg: "bg-violet-100 dark:bg-violet-950/40",
+      "Behalte das gesamte Schuljahr im Blick. Verfolge Fortschritte und bevorstehende Stunden.",
   },
   {
-    icon: Calendar,
     title: "Visueller Kalender",
     description:
-      "Plane und visualisiere deinen Unterricht für das gesamte Semester. Verschiebe Stunden per Drag-and-Drop ganz einfach.",
-    color: "text-emerald-600",
-    bg: "bg-emerald-100 dark:bg-emerald-950/40",
+      "Plane und visualisiere deinen Unterricht für das gesamte Semester. Verschiebe Stunden per Drag-and-Drop.",
   },
   {
-    icon: BookOpen,
     title: "Unterrichtsbibliothek",
     description:
-      "Baue eine persönliche Bibliothek wiederverwendbarer Unterrichtspläne auf. Sortiere nach Fach, Klasse und Thema.",
-    color: "text-amber-600",
-    bg: "bg-amber-100 dark:bg-amber-950/40",
+      "Baue eine persönliche Bibliothek wiederverwendbarer Pläne auf. Sortiert nach Fach, Klasse und Thema.",
   },
 ];
 
@@ -60,21 +32,18 @@ const testimonials = [
       "Chalkdust hat meine Unterrichtsvorbereitung komplett verändert. Was mich früher Stunden gekostet hat, dauert jetzt 20 Minuten.",
     name: "Sarah K.",
     role: "Biologielehrerin, Gymnasium",
-    initials: "SK",
   },
   {
     quote:
       "Der KI-Assistent ist wie eine Kollegin, die immer verfügbar ist. Er schlägt Aktivitäten vor, auf die ich selbst nie gekommen wäre.",
     name: "Marcus T.",
     role: "Geschichtslehrer, Realschule",
-    initials: "MT",
   },
   {
     quote:
       "Endlich ein Tool, das speziell für Lehrkräfte entwickelt wurde. Es kennt die Lehrpläne und spart mir so viel Zeit.",
     name: "Priya R.",
     role: "Mathematiklehrerin, Grundschule",
-    initials: "PR",
   },
 ];
 
@@ -127,113 +96,150 @@ const plans = [
   },
 ];
 
+const steps = [
+  {
+    step: "1",
+    title: "Sag uns, was du brauchst",
+    description:
+      "Gib Fach, Klassenstufe, Thema und Dauer ein. Die KI übernimmt den Rest.",
+  },
+  {
+    step: "2",
+    title: "KI erstellt deinen Plan",
+    description:
+      "Erhalte in Sekunden einen vollständigen Unterrichtsplan mit Zielen, Aktivitäten und Bewertung.",
+  },
+  {
+    step: "3",
+    title: "Anpassen & einplanen",
+    description:
+      "Passe ihn nach Belieben an, trage ihn in deinen Kalender ein — und du bist bereit.",
+  },
+];
+
 export default function LandingPage() {
+  const [featuredFeature, ...otherFeatures] = features;
+
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden px-4 pb-20 pt-24 sm:px-6 sm:pt-32">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
-        <div className="mx-auto max-w-4xl text-center">
-          <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1">
-            <Sparkles className="size-3 text-primary" />
-            KI-gestützte Unterrichtsplanung
-          </Badge>
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-            Besserer Unterricht.{" "}
-            <span className="text-primary">Mehr Zeit zum Lehren.</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Chalkdust hilft Lehrkräften, mit der Kraft der KI herausragenden
-            Unterricht zu planen und zu gestalten — damit du weniger Zeit mit
-            Vorbereitung und mehr Zeit mit dem Unterrichten verbringst.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" className="h-12 px-8 text-base" asChild>
-              <Link href="/dashboard">
-                <GraduationCap className="mr-2 size-5" />
-                Jetzt kostenlos starten
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base" asChild>
-              <Link href="/dashboard">So funktioniert&apos;s</Link>
-            </Button>
+      {/* Hero — asymmetric, left-aligned, editorial */}
+      <section className="px-4 pb-16 pt-20 sm:px-6 sm:pt-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid items-end gap-12 lg:grid-cols-[3fr_2fr]">
+            <div>
+              <p className="mb-6 text-sm font-medium uppercase tracking-widest text-primary">
+                KI-gestützte Unterrichtsplanung
+              </p>
+              <h1 className="text-5xl font-bold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+                Besserer
+                <br />
+                Unterricht.
+                <br />
+                <em className="text-primary not-italic">Mehr Zeit.</em>
+              </h1>
+              <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                Chalkdust hilft Lehrkräften, mit der Kraft der KI
+                herausragenden Unterricht zu planen — damit du weniger Zeit mit
+                Vorbereitung und mehr Zeit mit dem Unterrichten verbringst.
+              </p>
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button size="lg" className="h-12 px-8 text-base" asChild>
+                  <Link href="/dashboard">Jetzt kostenlos starten</Link>
+                </Button>
+                <Link
+                  href="#funktionen"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Mehr erfahren →
+                </Link>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Keine Kreditkarte erforderlich · Kostenloser Plan verfügbar
+              </p>
+            </div>
+
+            {/* Pull quote — teacher voice, right column */}
+            <div className="hidden lg:flex flex-col justify-end pb-4">
+              <blockquote className="border-l-2 border-primary pl-5">
+                <p className="font-display text-xl italic leading-relaxed text-foreground/75">
+                  &bdquo;Was mich früher Stunden gekostet hat, dauert jetzt 20
+                  Minuten.&ldquo;
+                </p>
+                <footer className="mt-3 text-sm text-muted-foreground">
+                  — Sarah K., Biologielehrerin
+                </footer>
+              </blockquote>
+            </div>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Keine Kreditkarte erforderlich · Kostenloser Plan verfügbar
-          </p>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="funktionen" className="px-4 py-20 sm:px-6">
+      {/* Features — asymmetric: one large featured, three stacked */}
+      <section id="funktionen" className="border-t px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
+          <div className="mb-14">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Alles, was Lehrkräfte brauchen
             </h2>
-            <p className="mt-3 text-muted-foreground">
+            <p className="mt-3 max-w-xl text-muted-foreground">
               Von Grund auf für den modernen Unterricht entwickelt.
             </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border-none shadow-sm bg-muted/30">
-                <CardHeader>
-                  <div className={`mb-2 flex size-10 items-center justify-center rounded-lg ${feature.bg}`}>
-                    <feature.icon className={`size-5 ${feature.color}`} />
-                  </div>
-                  <CardTitle className="text-base">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
+
+          <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+            {/* Featured large item */}
+            <div className="flex flex-col gap-4 rounded-sm bg-muted/50 p-8 sm:p-10">
+              <p className="text-xs font-medium uppercase tracking-widest text-primary">
+                Kernfunktion
+              </p>
+              <h3 className="text-3xl font-bold sm:text-4xl">
+                {featuredFeature?.title}
+              </h3>
+              <p className="max-w-md text-muted-foreground leading-relaxed">
+                {featuredFeature?.description}
+              </p>
+              <div className="mt-2">
+                <Button asChild>
+                  <Link href="/dashboard">Jetzt ausprobieren</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Stack of smaller feature items */}
+            <div className="flex flex-col divide-y rounded-sm border">
+              {otherFeatures.map((feature) => (
+                <div key={feature.title} className="flex flex-col gap-1.5 p-5">
+                  <h3 className="font-bold">{feature.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
                     {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="so-funktionierts" className="bg-muted/30 px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-12 text-center">
+      {/* How it works — editorial large numbers, no circles */}
+      <section id="so-funktionierts" className="border-t bg-muted/30 px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Vom leeren Blatt zum Unterrichtsplan in Minuten
+              Vom leeren Blatt zum
+              <br />
+              Unterrichtsplan in Minuten
             </h2>
           </div>
-          <div className="grid gap-8 sm:grid-cols-3">
-            {[
-              {
-                step: "1",
-                icon: Zap,
-                title: "Sag uns, was du brauchst",
-                description:
-                  "Gib Fach, Klassenstufe, Thema und Dauer ein. Die KI übernimmt den Rest.",
-              },
-              {
-                step: "2",
-                icon: Sparkles,
-                title: "KI erstellt deinen Plan",
-                description:
-                  "Erhalte in Sekunden einen vollständigen Unterrichtsplan mit Zielen, Aktivitäten und Bewertung.",
-              },
-              {
-                step: "3",
-                icon: CheckCircle2,
-                title: "Anpassen & einplanen",
-                description:
-                  "Passe ihn nach Belieben an, trage ihn in deinen Kalender ein und du bist bereit.",
-              },
-            ].map((step) => (
-              <div key={step.step} className="flex flex-col items-center text-center">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold">
+          <div className="grid gap-10 sm:grid-cols-3">
+            {steps.map((step) => (
+              <div key={step.step}>
+                <span className="font-display text-7xl font-bold leading-none text-primary/20">
                   {step.step}
-                </div>
-                <step.icon className="mb-3 size-6 text-primary" />
-                <h3 className="mb-2 font-semibold">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
+                </span>
+                <h3 className="mt-3 text-lg font-bold">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {step.description}
+                </p>
               </div>
             ))}
           </div>
@@ -241,53 +247,33 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="px-4 py-20 sm:px-6">
+      <section className="border-t px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
+          <div className="mb-14">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Geliebt von Lehrkräften
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              Tausende Lehrkräfte sparen bereits Zeit mit Chalkdust.
-            </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {testimonials.map((t) => (
-              <Card key={t.name} className="border-none shadow-sm">
-                <CardHeader>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="size-4 fill-amber-400 text-amber-400"
-                      />
-                    ))}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    &bdquo;{t.quote}&ldquo;
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                      {t.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={t.name} className="flex flex-col gap-4 border-t-2 border-primary/20 pt-5">
+                <p className="font-display text-lg italic leading-relaxed text-foreground/80">
+                  &bdquo;{t.quote}&ldquo;
+                </p>
+                <div>
+                  <p className="text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="preise" className="bg-muted/30 px-4 py-20 sm:px-6">
+      <section id="preise" className="border-t bg-muted/30 px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
+          <div className="mb-14">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Einfache, transparente Preise
             </h2>
@@ -295,68 +281,79 @@ export default function LandingPage() {
               Starte kostenlos, upgrade wenn du bereit bist.
             </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             {plans.map((plan) => (
-              <Card
+              <div
                 key={plan.name}
-                className={`relative flex flex-col ${
+                className={`relative flex flex-col gap-5 rounded-sm border p-6 ${
                   plan.highlighted
-                    ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary"
-                    : ""
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "bg-card"
                 }`}
               >
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                    <Badge className="px-3 text-xs">Beliebteste Wahl</Badge>
+                    <span className="rounded-sm bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                      Beliebteste Wahl
+                    </span>
                   </div>
                 )}
-                <CardHeader>
-                  <CardTitle className="text-base">{plan.name}</CardTitle>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">/{plan.period}</span>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    {plan.name}
+                  </p>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="font-display text-3xl font-bold">
+                      {plan.price}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      /{plan.period}
+                    </span>
                   </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-1 flex-col gap-4">
-                  <ul className="flex-1 space-y-2">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="size-4 shrink-0 text-primary" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className="w-full"
-                    variant={plan.highlighted ? "default" : "outline"}
-                    asChild
-                  >
-                    <Link href="/dashboard">{plan.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {plan.description}
+                  </p>
+                </div>
+                <ul className="flex-1 space-y-2 border-t pt-4">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  className="w-full"
+                  variant={plan.highlighted ? "default" : "outline"}
+                  asChild
+                >
+                  <Link href="/dashboard">{plan.cta}</Link>
+                </Button>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Bereit, deine Planung zu transformieren?
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Schließe dich tausenden Lehrkräften an, die mit Chalkdust jede Woche
-            Stunden sparen.
-          </p>
-          <Button size="lg" className="mt-8 h-12 px-10 text-base" asChild>
-            <Link href="/dashboard">
-              <GraduationCap className="mr-2 size-5" />
-              Jetzt kostenlos starten
-            </Link>
-          </Button>
+      <section className="border-t px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid items-end gap-8 lg:grid-cols-[2fr_1fr]">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Bereit, deine Planung
+                <br />
+                zu transformieren?
+              </h2>
+              <p className="mt-4 max-w-lg text-muted-foreground leading-relaxed">
+                Schließe dich tausenden Lehrkräften an, die mit Chalkdust jede
+                Woche Stunden sparen.
+              </p>
+              <Button size="lg" className="mt-8 h-12 px-10 text-base" asChild>
+                <Link href="/dashboard">Jetzt kostenlos starten</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
     </>

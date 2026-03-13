@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   Bookmark,
   BookOpen,
-  GraduationCap,
   LayoutDashboard,
   Settings,
   HelpCircle,
@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,8 +71,20 @@ const bottomNavItems = [
   },
 ];
 
+function getInitials(firstName?: string | null, lastName?: string | null): string {
+  if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  if (firstName) return firstName[0].toUpperCase();
+  return "?";
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  const displayName = user?.fullName || user?.firstName || "Mein Konto";
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const initials = getInitials(user?.firstName, user?.lastName);
 
   return (
     <Sidebar collapsible="icon">
@@ -81,11 +93,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <GraduationCap className="size-4" />
+                <div className="flex size-8 shrink-0 items-center justify-center">
+                  <span className="font-display text-[18px] font-bold italic leading-none text-primary tracking-tight">
+                    cd
+                  </span>
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Chalkdust</span>
+                  <span className="font-display font-semibold tracking-tight">Chalkdust</span>
                   <span className="text-xs text-muted-foreground">
                     Unterrichtsplanung
                   </span>
@@ -156,52 +170,65 @@ export function AppSidebar() {
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
-                      JS
+                  <Avatar className="h-8 w-8 rounded-sm">
+                    {user?.imageUrl && (
+                      <AvatarImage src={user.imageUrl} alt={displayName} />
+                    )}
+                    <AvatarFallback className="rounded-sm bg-primary text-primary-foreground text-xs">
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Jana Schmidt</span>
+                    <span className="truncate font-semibold">{displayName}</span>
                     <span className="truncate text-xs text-muted-foreground">
-                      jana@schule.de
+                      {email}
                     </span>
                   </div>
                   <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-sm"
                 side="bottom"
                 align="end"
                 sideOffset={4}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
-                        JS
+                    <Avatar className="h-8 w-8 rounded-sm">
+                      {user?.imageUrl && (
+                        <AvatarImage src={user.imageUrl} alt={displayName} />
+                      )}
+                      <AvatarFallback className="rounded-sm bg-primary text-primary-foreground text-xs">
+                        {initials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">Jana Schmidt</span>
+                      <span className="truncate font-semibold">{displayName}</span>
                       <span className="truncate text-xs text-muted-foreground">
-                        jana@schule.de
+                        {email}
                       </span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 size-4" />
-                  Profil
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <User className="mr-2 size-4" />
+                    Profil
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 size-4" />
-                  Einstellungen
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="mr-2 size-4" />
+                    Einstellungen
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => signOut()}
+                >
                   <LogOut className="mr-2 size-4" />
                   Abmelden
                 </DropdownMenuItem>
