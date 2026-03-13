@@ -12,13 +12,17 @@ export async function saveLessonPlan(
   classGroupId: string,
   plan: LessonPlanOutput,
   lessonDate?: string,
-  durationMinutes?: number
+  durationMinutes?: number,
+  seriesId?: string,
+  milestoneId?: string
 ) {
   try {
     const [created] = await db
       .insert(lessonPlans)
       .values({
         classGroupId,
+        seriesId: seriesId || null,
+        milestoneId: milestoneId || null,
         lessonDate: lessonDate || null,
         durationMinutes: durationMinutes || 45,
         status: "draft",
@@ -103,12 +107,16 @@ export async function createBlankLessonPlan(
   classGroupId: string,
   topic: string,
   lessonDate?: string,
-  durationMinutes?: number
+  durationMinutes?: number,
+  seriesId?: string,
+  milestoneId?: string
 ) {
   const [created] = await db
     .insert(lessonPlans)
     .values({
       classGroupId,
+      seriesId: seriesId || null,
+      milestoneId: milestoneId || null,
       topic,
       lessonDate: lessonDate || null,
       durationMinutes: durationMinutes || 45,

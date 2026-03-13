@@ -18,6 +18,8 @@ export const POST = withLogging("api.plans.generate", async (request) => {
     topicFreeText,
     learningGoals,
     additionalNotes,
+    seriesId,
+    milestoneId,
   } = body;
 
   if (!classGroupId) {
@@ -27,7 +29,7 @@ export const POST = withLogging("api.plans.generate", async (request) => {
     );
   }
 
-  const context = await assembleContext(classGroupId, topicId);
+  const context = await assembleContext(classGroupId, topicId, seriesId, milestoneId);
 
   const teacherInput = [
     `## Lehrerangaben`,
@@ -101,7 +103,9 @@ export const POST = withLogging("api.plans.generate", async (request) => {
       classGroupId,
       retryPlan,
       lessonDate,
-      targetDuration
+      targetDuration,
+      seriesId,
+      milestoneId
     );
     return NextResponse.json({ plan: retryPlan, id: saved.id });
   }
@@ -110,7 +114,9 @@ export const POST = withLogging("api.plans.generate", async (request) => {
     classGroupId,
     plan,
     lessonDate,
-    targetDuration
+    targetDuration,
+    seriesId,
+    milestoneId
   );
   return NextResponse.json({ plan, id: saved.id });
 }, "Fehler bei der Planerstellung.");

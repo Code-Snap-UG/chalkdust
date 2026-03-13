@@ -85,6 +85,46 @@ export type CurriculumTopicExtraction = z.infer<
   typeof curriculumTopicExtractionSchema
 >;
 
+// Series milestone generation
+
+export const seriesMilestoneSchema = z.object({
+  title: z
+    .string()
+    .describe("Kurzer, prägnanter Titel des Meilensteins"),
+  description: z
+    .string()
+    .describe(
+      "Beschreibung, was in diesem Meilenstein erarbeitet wird (1–3 Sätze)"
+    ),
+  learningGoals: z
+    .array(
+      z.object({
+        text: z
+          .string()
+          .describe("Beobachtbares, messbares Lernziel für diesen Meilenstein"),
+      })
+    )
+    .min(1)
+    .describe("Lernziele für diesen Meilenstein"),
+  estimatedLessons: z
+    .number()
+    .int()
+    .positive()
+    .describe("Geschätzte Anzahl an Unterrichtsstunden für diesen Meilenstein"),
+});
+
+export const seriesGenerationSchema = z.object({
+  milestones: z
+    .array(seriesMilestoneSchema)
+    .min(2)
+    .describe(
+      "Geordnete Liste der Meilensteine — progressiv aufgebaut vom Einfachen zum Komplexen"
+    ),
+});
+
+export type SeriesMilestoneOutput = z.infer<typeof seriesMilestoneSchema>;
+export type SeriesGenerationOutput = z.infer<typeof seriesGenerationSchema>;
+
 export const transitionSummarySchema = z.object({
   summary: z
     .string()

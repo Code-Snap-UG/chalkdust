@@ -64,11 +64,62 @@ export const curriculumTopics = pgTable("curriculum_topics", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+// Lesson Series (Unterrichtsreihe / Reihenplanung)
+
+export const lessonSeries = pgTable("lesson_series", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  classGroupId: uuid("class_group_id")
+    .references(() => classGroups.id, { onDelete: "cascade" })
+    .notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  estimatedLessons: integer("estimated_lessons").notNull(),
+  estimatedWeeks: integer("estimated_weeks"),
+  startDate: date("start_date"),
+  status: varchar("status", { length: 20 }).notNull().default("draft"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const seriesMilestones = pgTable("series_milestones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  seriesId: uuid("series_id")
+    .references(() => lessonSeries.id, { onDelete: "cascade" })
+    .notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  learningGoals: jsonb("learning_goals").notNull().default([]),
+  estimatedLessons: integer("estimated_lessons").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(0),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const seriesCurriculumTopics = pgTable(
+  "series_curriculum_topics",
+  {
+    seriesId: uuid("series_id")
+      .references(() => lessonSeries.id, { onDelete: "cascade" })
+      .notNull(),
+    curriculumTopicId: uuid("curriculum_topic_id")
+      .references(() => curriculumTopics.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.seriesId, t.curriculumTopicId] })]
+);
+
 export const lessonPlans = pgTable("lesson_plans", {
   id: uuid("id").defaultRandom().primaryKey(),
   classGroupId: uuid("class_group_id")
     .references(() => classGroups.id, { onDelete: "cascade" })
     .notNull(),
+  seriesId: uuid("series_id").references(() => lessonSeries.id, {
+    onDelete: "set null",
+  }),
+  milestoneId: uuid("milestone_id").references(() => seriesMilestones.id, {
+    onDelete: "set null",
+  }),
   lessonDate: date("lesson_date"),
   durationMinutes: integer("duration_minutes").notNull().default(45),
   status: varchar("status", { length: 20 }).notNull().default("draft"),
@@ -135,6 +186,7 @@ export const classGroupsRelations = relations(classGroups, ({ one, many }) => ({
   curriculum: one(curricula),
   lessonPlans: many(lessonPlans),
   diaryEntries: many(diaryEntries),
+  lessonSeries: many(lessonSeries),
 }));
 
 export const curriculaRelations = relations(curricula, ({ one, many }) => ({
@@ -155,12 +207,58 @@ export const curriculumTopicsRelations = relations(
   })
 );
 
+export const lessonSeriesRelations = relations(
+  lessonSeries,
+  ({ one, many }) => ({
+    classGroup: one(classGroups, {
+      fields: [lessonSeries.classGroupId],
+      references: [classGroups.id],
+    }),
+    milestones: many(seriesMilestones),
+    lessonPlans: many(lessonPlans),
+    curriculumTopicLinks: many(seriesCurriculumTopics),
+  })
+);
+
+export const seriesMilestonesRelations = relations(
+  seriesMilestones,
+  ({ one, many }) => ({
+    series: one(lessonSeries, {
+      fields: [seriesMilestones.seriesId],
+      references: [lessonSeries.id],
+    }),
+    lessonPlans: many(lessonPlans),
+  })
+);
+
+export const seriesCurriculumTopicsRelations = relations(
+  seriesCurriculumTopics,
+  ({ one }) => ({
+    series: one(lessonSeries, {
+      fields: [seriesCurriculumTopics.seriesId],
+      references: [lessonSeries.id],
+    }),
+    curriculumTopic: one(curriculumTopics, {
+      fields: [seriesCurriculumTopics.curriculumTopicId],
+      references: [curriculumTopics.id],
+    }),
+  })
+);
+
 export const lessonPlansRelations = relations(
   lessonPlans,
   ({ one, many }) => ({
     classGroup: one(classGroups, {
       fields: [lessonPlans.classGroupId],
       references: [classGroups.id],
+    }),
+    series: one(lessonSeries, {
+      fields: [lessonPlans.seriesId],
+      references: [lessonSeries.id],
+    }),
+    milestone: one(seriesMilestones, {
+      fields: [lessonPlans.milestoneId],
+      references: [seriesMilestones.id],
     }),
     diaryEntries: many(diaryEntries),
     materials: many(materials),

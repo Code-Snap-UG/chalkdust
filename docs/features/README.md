@@ -11,8 +11,10 @@ For the full product vision and future feature ideas, see [`../VISION.md`](../VI
 | Feature | Status | Doc |
 |---|---|---|
 | AI-Assisted Lesson Planning | partial | [`lesson-planning.md`](./lesson-planning.md) |
+| Lesson Series (Reihenplanung) | partial | [`lesson-series.md`](./lesson-series.md) |
 | Lesson Snippets | partial | [`snippets.md`](./snippets.md) |
 | End-of-Year Transition | built | [`end-of-year-transition.md`](./end-of-year-transition.md) |
+| Lesson Plan Lifecycle | partial | [`lesson-plan-lifecycle.md`](./lesson-plan-lifecycle.md) |
 
 **Status key:**
 - **built** — fully implemented; no significant roadmap items outstanding in the current phase.

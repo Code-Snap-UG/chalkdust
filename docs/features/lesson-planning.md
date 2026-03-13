@@ -179,9 +179,10 @@ The screen is split into two conceptual areas:
 **Context assembly for the LLM prompt (what gets sent):**
 
 1. Relevant Kerncurriculum excerpt (topics around the selected area)
-2. Last N diary entries for this class (what was recently covered, teacher notes, and summaries of attached materials -- both system-generated and teacher-uploaded)
-3. The structured form inputs (date, duration, topic, goals, notes)
-4. Conversation history (for refinement turns)
+2. Reihenplanung context (if the lesson belongs to a series) -- full milestone arc with goals, status, and lesson summaries. See [`lesson-series.md`](./lesson-series.md) for details.
+3. Last N diary entries for this class (what was recently covered, teacher notes, and summaries of attached materials -- both system-generated and teacher-uploaded)
+4. The structured form inputs (date, duration, topic, goals, notes)
+5. Conversation history (for refinement turns)
 
 ---
 
@@ -587,6 +588,10 @@ Not the entire Kerncurriculum -- only the relevant section. Strategy:
 - If the teacher selected a specific topic from the dropdown, include that topic + its neighboring topics (for context on what comes before/after)
 - If free-text, use a simple keyword match against the topic index to find the most relevant 2-3 curriculum sections
 - Include at most ~2000 tokens of curriculum context to leave room for other layers
+
+**Layer 5b -- Reihenplanung (dynamic, optional — added March 2026):**
+
+When a lesson belongs to a Lesson Series (Unterrichtsreihe), the full series arc is inserted between the curriculum excerpt and diary entries. This includes all milestones with their status, learning goals, and linked lesson summaries — giving the AI both backward-looking (diary) and forward-looking (Reihe) context. See [`lesson-series.md`](./lesson-series.md) for full details of this context layer.
 
 **Layer 6 -- Recent Diary Entries (dynamic):**
 

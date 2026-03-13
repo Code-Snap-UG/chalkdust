@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import useSWR from "swr";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Check,
   Clock,
+  Layers,
   Loader2,
   MessageSquare,
   Send,
@@ -62,15 +63,39 @@ type CurriculumTopic = {
   competencyArea: string | null;
 };
 
+type SeriesMilestone = {
+  id: string;
+  title: string;
+  description: string | null;
+  learningGoals: { text: string }[];
+  estimatedLessons: number;
+};
+
+type SeriesInfo = {
+  id: string;
+  title: string;
+  description: string | null;
+  milestones: SeriesMilestone[];
+};
+
 export default function PlanLessonPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const classGroupId = params.id as string;
+
+  const seriesIdParam = searchParams.get("seriesId");
+  const milestoneIdParam = searchParams.get("milestoneId");
 
   const [generating, setGenerating] = useState(false);
   const [plan, setPlan] = useState<LessonPlan | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
+
+  // Series state
+  const [seriesInfo, setSeriesInfo] = useState<SeriesInfo | null>(null);
+  const [selectedSeriesId, setSelectedSeriesId] = useState(seriesIdParam || "");
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState(milestoneIdParam || "");
 
   // Form state
   const [lessonDate, setLessonDate] = useState("");
@@ -92,6 +117,47 @@ export default function PlanLessonPage() {
   );
 
   const curriculumTopics = topicsData?.topics ?? [];
+
+  // Fetch series data when seriesId is provided
+  useEffect(() => {
+    if (!selectedSeriesId) {
+      setSeriesInfo(null);
+      return;
+    }
+    fetch(`/api/series/${selectedSeriesId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.id) {
+          setSeriesInfo({
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            milestones: (data.milestones || []).map((m: SeriesMilestone & { id: string }) => ({
+              id: m.id,
+              title: m.title,
+              description: m.description,
+              learningGoals: Array.isArray(m.learningGoals) ? m.learningGoals : [],
+              estimatedLessons: m.estimatedLessons,
+            })),
+          });
+        }
+      })
+      .catch(() => {});
+  }, [selectedSeriesId]);
+
+  // Pre-populate form from milestone data
+  useEffect(() => {
+    if (!seriesInfo || !selectedMilestoneId) return;
+    const milestone = seriesInfo.milestones.find(
+      (m) => m.id === selectedMilestoneId
+    );
+    if (milestone) {
+      if (!topicFreeText) setTopicFreeText(milestone.title);
+      if (!learningGoals && milestone.learningGoals.length > 0) {
+        setLearningGoals(milestone.learningGoals.map((g) => g.text).join("; "));
+      }
+    }
+  }, [seriesInfo, selectedMilestoneId]);
 
   // Redirect if the class is archived
   useEffect(() => {
@@ -151,6 +217,8 @@ export default function PlanLessonPage() {
           topicFreeText: topicFreeText || undefined,
           learningGoals: learningGoals || undefined,
           additionalNotes: additionalNotes || undefined,
+          seriesId: selectedSeriesId || undefined,
+          milestoneId: selectedMilestoneId || undefined,
         }),
       });
 
@@ -194,6 +262,26 @@ export default function PlanLessonPage() {
           Gib Kontext ein und lass die KI einen Unterrichtsplan erstellen.
         </p>
       </div>
+
+      {/* Series context banner */}
+      {seriesInfo && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <Layers className="size-5 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">
+              Reihe: {seriesInfo.title}
+            </p>
+            {selectedMilestoneId && (
+              <p className="text-xs text-muted-foreground">
+                Meilenstein:{" "}
+                {seriesInfo.milestones.find(
+                  (m) => m.id === selectedMilestoneId
+                )?.title || ""}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Form */}

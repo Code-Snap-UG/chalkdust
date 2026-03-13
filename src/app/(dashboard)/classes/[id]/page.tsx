@@ -7,12 +7,14 @@ import { getCurriculumTopics } from "@/lib/actions/curriculum";
 import { getDiaryEntries } from "@/lib/actions/diary";
 import { getLessonPlans } from "@/lib/actions/lesson-plans";
 import { getClassFavorites } from "@/lib/actions/snippets";
+import { getSeriesForClass } from "@/lib/actions/series";
 import { notFound } from "next/navigation";
 import {
   BookOpen,
   Calendar,
   Clock,
   FileText,
+  Layers,
   PencilLine,
   Sparkles,
   Target,
@@ -30,13 +32,14 @@ export default async function ClassDetailPage({
 }) {
   const { id } = await params;
 
-  const [classGroup, topics, diaryEntries, lessonPlans, snippetFavorites] =
+  const [classGroup, topics, diaryEntries, lessonPlans, snippetFavorites, seriesList] =
     await Promise.all([
       getClassGroup(id),
       getCurriculumTopics(id),
       getDiaryEntries(id),
       getLessonPlans(id),
       getClassFavorites(id),
+      getSeriesForClass(id),
     ]);
 
   if (!classGroup) notFound();
@@ -203,17 +206,19 @@ export default async function ClassDetailPage({
                 </CardContent>
               </Card>
             </Link>
-            <Link href={`/classes/${id}/plan/blank`}>
+            <Link href={`/classes/${id}/series`}>
               <Card className="cursor-pointer transition-shadow hover:shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                    <PencilLine className="size-4 text-primary" />
-                    Manuell erstellen
+                    <Layers className="size-4 text-primary" />
+                    Reihenplanung
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs text-muted-foreground">
-                    Erstelle einen Unterrichtsplan ohne KI-Unterstützung.
+                    {seriesList.length > 0
+                      ? `${seriesList.length} ${seriesList.length === 1 ? "Reihe" : "Reihen"} · Mehrstündige Einheiten planen.`
+                      : "Plane mehrstündige Unterrichtseinheiten mit Meilensteinen."}
                   </p>
                 </CardContent>
               </Card>
@@ -254,6 +259,57 @@ export default async function ClassDetailPage({
           </Card>
         </Link>
       </div>
+
+      {/* Active Reihen */}
+      {seriesList.length > 0 && (
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold">Unterrichtsreihen</h3>
+            <Link
+              href={`/classes/${id}/series`}
+              className="text-xs text-primary hover:underline"
+            >
+              Alle anzeigen →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            {seriesList.slice(0, 3).map((s) => (
+              <Link key={s.id} href={`/classes/${id}/series/${s.id}`}>
+                <div className="flex items-center gap-3 rounded-lg border p-3 transition-shadow hover:shadow-sm">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                    <Layers className="size-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium line-clamp-1">
+                      {s.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.estimatedLessons} Stunden
+                      {s.estimatedWeeks ? ` · ~${s.estimatedWeeks} Wochen` : ""}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      s.status === "active"
+                        ? "default"
+                        : s.status === "completed"
+                          ? "secondary"
+                          : "outline"
+                    }
+                    className="shrink-0 text-xs"
+                  >
+                    {s.status === "active"
+                      ? "Aktiv"
+                      : s.status === "completed"
+                        ? "Fertig"
+                        : "Entwurf"}
+                  </Badge>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Snippet favorites */}
       <div>

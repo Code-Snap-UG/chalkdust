@@ -12,7 +12,8 @@ export type AgentMode =
   | "plan_generation"
   | "plan_refinement"
   | "curriculum_extraction"
-  | "transition_summary";
+  | "transition_summary"
+  | "series_generation";
 
 export interface TraceMetadata {
   agentMode: AgentMode;

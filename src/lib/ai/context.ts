@@ -5,8 +5,10 @@ import {
   diaryEntries,
   classGroups,
   lessonPlans,
+  lessonSeries,
+  seriesMilestones,
 } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc, and, inArray } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // Vagueness detection
@@ -142,9 +144,131 @@ function formatPlannedEntry(d: DiaryRow, plan: PlanRow | null): string {
 // Context assembly
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Reihe context builder
+// ---------------------------------------------------------------------------
+
+async function buildSeriesContext(
+  seriesId: string,
+  currentMilestoneId?: string
+): Promise<string | null> {
+  const [series] = await db
+    .select()
+    .from(lessonSeries)
+    .where(eq(lessonSeries.id, seriesId))
+    .limit(1);
+
+  if (!series) return null;
+
+  const milestones = await db
+    .select()
+    .from(seriesMilestones)
+    .where(eq(seriesMilestones.seriesId, seriesId))
+    .orderBy(asc(seriesMilestones.sortOrder));
+
+  const seriesPlans = await db
+    .select()
+    .from(lessonPlans)
+    .where(eq(lessonPlans.seriesId, seriesId))
+    .orderBy(asc(lessonPlans.lessonDate));
+
+  const planIds = seriesPlans.map((p) => p.id);
+  const seriesDiaryRows = planIds.length
+    ? await db
+        .select()
+        .from(diaryEntries)
+        .where(inArray(diaryEntries.lessonPlanId, planIds))
+    : [];
+
+  const diaryByPlanId = new Map(
+    seriesDiaryRows.map((d) => [d.lessonPlanId, d])
+  );
+
+  let completedCount = 0;
+  for (const p of seriesPlans) {
+    const d = diaryByPlanId.get(p.id);
+    if (d && ["completed", "partial", "deviated"].includes(d.progressStatus)) {
+      completedCount++;
+    }
+  }
+
+  const lines: string[] = [
+    `## Unterrichtsreihe: ${series.title}`,
+    ``,
+    `Ziel: ${series.description || "Kein Ziel angegeben"}`,
+    `Geplante Stunden: ${series.estimatedLessons} | Bisher durchgeführt: ${completedCount}`,
+    ``,
+    `### Meilensteine:`,
+  ];
+
+  for (let i = 0; i < milestones.length; i++) {
+    const m = milestones[i];
+    const mPlans = seriesPlans.filter((p) => p.milestoneId === m.id);
+    const mDone = mPlans.filter((p) => {
+      const d = diaryByPlanId.get(p.id);
+      return (
+        d && ["completed", "partial", "deviated"].includes(d.progressStatus)
+      );
+    }).length;
+    const allDone =
+      mPlans.length > 0 && mDone === mPlans.length && m.status !== "pending";
+    const isCurrent = m.id === currentMilestoneId || (!allDone && m.status !== "completed");
+
+    const statusLabel = allDone || m.status === "completed"
+      ? "Abgeschlossen"
+      : isCurrent
+        ? "Aktuell"
+        : "Ausstehend";
+
+    const goals = Array.isArray(m.learningGoals)
+      ? (m.learningGoals as { text: string }[])
+          .map((g) => g.text)
+          .join(", ")
+      : "";
+
+    lines.push(`${i + 1}. [${statusLabel}] ${m.title} — ${m.description || ""}`);
+    if (goals) {
+      lines.push(`   Ziele: ${goals}`);
+    }
+
+    if (mPlans.length > 0) {
+      const summaries = mPlans.map((p) => {
+        const d = diaryByPlanId.get(p.id);
+        const status = d?.progressStatus || p.status;
+        const summary = d?.actualSummary || d?.plannedSummary || p.topic;
+        return `${p.lessonDate || "kein Datum"}: [${status}] ${summary}`;
+      });
+      lines.push(`   Bisherige Stunden: ${summaries.join("; ")}`);
+    }
+  }
+
+  if (currentMilestoneId) {
+    const current = milestones.find((m) => m.id === currentMilestoneId);
+    if (current) {
+      const mPlans = seriesPlans.filter(
+        (p) => p.milestoneId === currentMilestoneId
+      );
+      lines.push(``);
+      lines.push(`### Aktuelle Stunde:`);
+      lines.push(`Meilenstein: ${current.title}`);
+      lines.push(
+        `Position: Stunde ${mPlans.length + 1} von ${current.estimatedLessons} in diesem Meilenstein`
+      );
+    }
+  }
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Context assembly
+// ---------------------------------------------------------------------------
+
 export async function assembleContext(
   classGroupId: string,
-  selectedTopicId?: string
+  selectedTopicId?: string,
+  seriesId?: string,
+  milestoneId?: string
 ) {
   const parts: string[] = [];
 
@@ -220,6 +344,14 @@ export async function assembleContext(
           )
           .join("\n")}`
       );
+    }
+  }
+
+  // Reihe context layer (additive — between curriculum and diary entries)
+  if (seriesId) {
+    const seriesContext = await buildSeriesContext(seriesId, milestoneId);
+    if (seriesContext) {
+      parts.push(seriesContext);
     }
   }
 
