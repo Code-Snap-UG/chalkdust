@@ -7,6 +7,7 @@ import {
   lessonPlans,
   lessonSeries,
   seriesMilestones,
+  milestoneLessonSlots,
 } from "@/lib/db/schema";
 import { eq, desc, asc, and, inArray } from "drizzle-orm";
 
@@ -226,16 +227,34 @@ async function buildSeriesContext(
     .orderBy(asc(lessonPlans.lessonDate));
 
   const planIds = seriesPlans.map((p) => p.id);
-  const seriesDiaryRows = planIds.length
-    ? await db
-        .select()
-        .from(diaryEntries)
-        .where(inArray(diaryEntries.lessonPlanId, planIds))
-    : [];
+  const milestoneIds = milestones.map((m) => m.id);
+
+  const [seriesDiaryRows, allSlots] = await Promise.all([
+    planIds.length
+      ? db
+          .select()
+          .from(diaryEntries)
+          .where(inArray(diaryEntries.lessonPlanId, planIds))
+      : Promise.resolve([]),
+    milestoneIds.length
+      ? db
+          .select()
+          .from(milestoneLessonSlots)
+          .where(inArray(milestoneLessonSlots.milestoneId, milestoneIds))
+          .orderBy(asc(milestoneLessonSlots.position))
+      : Promise.resolve([]),
+  ]);
 
   const diaryByPlanId = new Map(
     seriesDiaryRows.map((d) => [d.lessonPlanId, d])
   );
+
+  const slotsByMilestoneId = new Map<string, typeof allSlots>();
+  for (const slot of allSlots) {
+    const existing = slotsByMilestoneId.get(slot.milestoneId) ?? [];
+    existing.push(slot);
+    slotsByMilestoneId.set(slot.milestoneId, existing);
+  }
 
   let completedCount = 0;
   for (const p of seriesPlans) {
@@ -355,10 +374,42 @@ async function buildSeriesContext(
             .filter(Boolean)
         : [];
 
+      // Check whether an arc slot exists for this exact position
+      const milestoneSlots = slotsByMilestoneId.get(currentMilestoneId) ?? [];
+      const currentSlot = milestoneSlots.find((s) => s.position === position);
+
       lines.push(``);
       lines.push(`### Aktuelle Stunde:`);
       lines.push(`Meilenstein: ${current.title}`);
-      lines.push(buildProgressionBlock(position, total, milestoneGoals));
+
+      if (currentSlot) {
+        // Slot-specific context — precise, teacher-reviewed arc
+        const allGoals = Array.isArray(current.learningGoals)
+          ? (current.learningGoals as { text: string }[]).map((g) => g.text)
+          : [];
+        const slotGoals = Array.isArray(currentSlot.goalsAddressed)
+          ? (currentSlot.goalsAddressed as { text: string }[]).map((g) => g.text)
+          : [];
+        const remainingGoals = allGoals.filter((g) => !slotGoals.includes(g));
+
+        lines.push(
+          `Slot ${position} von ${total}: ${currentSlot.suggestedTopic}`
+        );
+        if (currentSlot.focusAreas) {
+          lines.push(`Schwerpunkt: ${currentSlot.focusAreas}`);
+        }
+        if (slotGoals.length > 0) {
+          lines.push(`Ziele für DIESE Stunde:`);
+          slotGoals.forEach((g) => lines.push(`- ${g}`));
+        }
+        if (remainingGoals.length > 0) {
+          lines.push(`Ziele für spätere Stunden (NICHT in dieser Stunde):`);
+          remainingGoals.forEach((g) => lines.push(`- ${g}`));
+        }
+      } else {
+        // No arc yet — fall back to the generic progression block
+        lines.push(buildProgressionBlock(position, total, milestoneGoals));
+      }
 
       // Build explicit constraint blocks from already-taught lessons in this milestone
       const taughtPlans = mPlans.filter((p) => {

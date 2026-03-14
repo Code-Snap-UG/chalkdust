@@ -9,11 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  AlertTriangle,
   ArrowLeft,
   Check,
   Circle,
+  Loader2,
   Pencil,
   Plus,
+  RotateCcw,
   Sparkles,
   X,
 } from "lucide-react";
@@ -35,6 +38,16 @@ type LessonPlanWithDiary = {
   diaryEntry: DiaryEntry | null;
 };
 
+type LessonSlot = {
+  id: string;
+  position: number;
+  suggestedTopic: string;
+  focusAreas: string | null;
+  goalsAddressed: unknown;
+  notes: string | null;
+  isStale: boolean;
+};
+
 type Milestone = {
   id: string;
   title: string;
@@ -44,6 +57,7 @@ type Milestone = {
   sortOrder: number;
   status: string;
   lessonPlans: LessonPlanWithDiary[];
+  lessonSlots: LessonSlot[];
 };
 
 type SeriesData = {
@@ -64,6 +78,32 @@ type ClassGroup = {
   grade: string;
   status: string;
 };
+
+function buildPlanUrl(
+  classGroupId: string,
+  seriesId: string,
+  milestoneId: string,
+  slots: LessonSlot[],
+  nextPosition: number
+): string {
+  const base = `/classes/${classGroupId}/plan?seriesId=${seriesId}&milestoneId=${milestoneId}`;
+  const slot = slots.find((s) => s.position === nextPosition);
+  if (!slot) return base;
+  const params = new URLSearchParams({
+    seriesId,
+    milestoneId,
+    slotTopic: slot.suggestedTopic,
+    ...(slot.focusAreas ? { slotFocus: slot.focusAreas } : {}),
+    ...(Array.isArray(slot.goalsAddressed) && slot.goalsAddressed.length > 0
+      ? {
+          slotGoals: (slot.goalsAddressed as { text: string }[])
+            .map((g) => g.text)
+            .join("; "),
+        }
+      : {}),
+  });
+  return `/classes/${classGroupId}/plan?${params.toString()}`;
+}
 
 function parseLearningGoals(goals: unknown): { text: string }[] {
   if (!Array.isArray(goals)) return [];
@@ -131,6 +171,12 @@ export function SeriesDetailClient({
   const [editDescription, setEditDescription] = useState("");
   const [editEstLessons, setEditEstLessons] = useState(1);
 
+  // Arc panel state
+  const [arcLoadingId, setArcLoadingId] = useState<string | null>(null);
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
+  const [editSlotTopic, setEditSlotTopic] = useState("");
+  const [editSlotFocus, setEditSlotFocus] = useState("");
+
   const totalPlanned = series.milestones.reduce(
     (sum, m) => sum + m.lessonPlans.length,
     0
@@ -176,6 +222,61 @@ export function SeriesDetailClient({
       }));
     }
     setEditingMilestoneId(null);
+  }
+
+  async function generateArc(milestoneId: string) {
+    setArcLoadingId(milestoneId);
+    try {
+      const res = await fetch(
+        `/api/series/${series.id}/milestones/${milestoneId}/arc`,
+        { method: "POST" }
+      );
+      if (res.ok) {
+        const slots: LessonSlot[] = await res.json();
+        setSeries((prev) => ({
+          ...prev,
+          milestones: prev.milestones.map((m) =>
+            m.id === milestoneId ? { ...m, lessonSlots: slots } : m
+          ),
+        }));
+      }
+    } finally {
+      setArcLoadingId(null);
+    }
+  }
+
+  function startEditSlot(slot: LessonSlot) {
+    setEditingSlotId(slot.id);
+    setEditSlotTopic(slot.suggestedTopic);
+    setEditSlotFocus(slot.focusAreas ?? "");
+  }
+
+  async function saveSlotEdit(milestoneId: string, slotId: string) {
+    const res = await fetch(`/api/series/${series.id}/milestones/${milestoneId}/arc/${slotId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        suggestedTopic: editSlotTopic,
+        focusAreas: editSlotFocus || null,
+      }),
+    });
+    if (res.ok) {
+      const updated: LessonSlot = await res.json();
+      setSeries((prev) => ({
+        ...prev,
+        milestones: prev.milestones.map((m) =>
+          m.id === milestoneId
+            ? {
+                ...m,
+                lessonSlots: m.lessonSlots.map((s) =>
+                  s.id === slotId ? updated : s
+                ),
+              }
+            : m
+        ),
+      }));
+    }
+    setEditingSlotId(null);
   }
 
   async function addNewMilestone() {
@@ -495,12 +596,154 @@ export function SeriesDetailClient({
                       </div>
                     )}
 
+                    {/* Arc panel: Stundenverteilung */}
+                    {!done && (
+                      <div className="mt-4 border-t pt-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Stundenverteilung
+                          </p>
+                          {milestone.lessonSlots.length > 0 && !isArchived && (
+                            <button
+                              type="button"
+                              onClick={() => generateArc(milestone.id)}
+                              disabled={arcLoadingId === milestone.id}
+                              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                            >
+                              {arcLoadingId === milestone.id ? (
+                                <Loader2 className="size-3 animate-spin" />
+                              ) : (
+                                <RotateCcw className="size-3" />
+                              )}
+                              Neu generieren
+                            </button>
+                          )}
+                        </div>
+
+                        {milestone.lessonSlots.length === 0 ? (
+                          <div className="flex items-center gap-2">
+                            {!isArchived && (
+                              <button
+                                type="button"
+                                onClick={() => generateArc(milestone.id)}
+                                disabled={arcLoadingId === milestone.id}
+                                className="flex items-center gap-1.5 rounded-md border border-dashed px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-50"
+                              >
+                                {arcLoadingId === milestone.id ? (
+                                  <Loader2 className="size-3 animate-spin" />
+                                ) : (
+                                  <Sparkles className="size-3" />
+                                )}
+                                Stundenverteilung vorschlagen
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {milestone.lessonSlots.map((slot) => {
+                              const isEditingSlot = editingSlotId === slot.id;
+                              return (
+                                <div
+                                  key={slot.id}
+                                  className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                    slot.isStale
+                                      ? "border-amber-200 bg-amber-50/50"
+                                      : "border-border bg-muted/20"
+                                  }`}
+                                >
+                                  {isEditingSlot ? (
+                                    <div className="flex flex-col gap-2">
+                                      <input
+                                        autoFocus
+                                        value={editSlotTopic}
+                                        onChange={(e) => setEditSlotTopic(e.target.value)}
+                                        className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder="Thema"
+                                      />
+                                      <input
+                                        value={editSlotFocus}
+                                        onChange={(e) => setEditSlotFocus(e.target.value)}
+                                        className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder="Schwerpunkt (optional)"
+                                      />
+                                      <div className="flex gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => saveSlotEdit(milestone.id, slot.id)}
+                                          className="flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground"
+                                        >
+                                          <Check className="size-3" />
+                                          Speichern
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingSlotId(null)}
+                                          className="flex items-center gap-1 rounded border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                                        >
+                                          <X className="size-3" />
+                                          Abbrechen
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="group/slot cursor-pointer"
+                                      onClick={() =>
+                                        !isArchived && startEditSlot(slot)
+                                      }
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                          <div className="flex items-baseline gap-2">
+                                            <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+                                              {slot.position}.
+                                            </span>
+                                            <span className="font-medium">
+                                              {slot.suggestedTopic}
+                                            </span>
+                                          </div>
+                                          <div className="flex shrink-0 items-center gap-1.5">
+                                            {slot.isStale && (
+                                              <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">
+                                                <AlertTriangle className="size-2.5" />
+                                                Veraltet
+                                              </span>
+                                            )}
+                                            {!isArchived && (
+                                              <>
+                                                <Link
+                                                  href={buildPlanUrl(classGroupId, series.id, milestone.id, milestone.lessonSlots, slot.position)}
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-primary group-hover/slot:opacity-100"
+                                                  title="Stunde planen"
+                                                >
+                                                  <Sparkles className="size-3" />
+                                                </Link>
+                                                <Pencil className="size-3 text-muted-foreground opacity-0 transition-opacity group-hover/slot:opacity-100" />
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      {slot.focusAreas && (
+                                        <p className="mt-0.5 pl-5 text-xs text-muted-foreground">
+                                          {slot.focusAreas}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Action: plan next lesson */}
                     {isCurrent && !isArchived && (
                       <div className="mt-3">
                         <Button size="sm" asChild>
                           <Link
-                            href={`/classes/${classGroupId}/plan?seriesId=${series.id}&milestoneId=${milestone.id}`}
+                            href={buildPlanUrl(classGroupId, series.id, milestone.id, milestone.lessonSlots, milestone.lessonPlans.length + 1)}
                           >
                             <Sparkles className="mr-1.5 size-3.5" />
                             Nächste Stunde planen
@@ -514,7 +757,7 @@ export function SeriesDetailClient({
                       <div className="mt-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                         <Button size="sm" variant="ghost" asChild>
                           <Link
-                            href={`/classes/${classGroupId}/plan?seriesId=${series.id}&milestoneId=${milestone.id}`}
+                            href={buildPlanUrl(classGroupId, series.id, milestone.id, milestone.lessonSlots, milestone.lessonPlans.length + 1)}
                           >
                             <Sparkles className="mr-1.5 size-3.5" />
                             Stunde planen

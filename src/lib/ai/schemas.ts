@@ -125,6 +125,41 @@ export const seriesGenerationSchema = z.object({
 export type SeriesMilestoneOutput = z.infer<typeof seriesMilestoneSchema>;
 export type SeriesGenerationOutput = z.infer<typeof seriesGenerationSchema>;
 
+// Milestone Lesson Arc generation
+
+export const arcSlotSchema = z.object({
+  position: z
+    .number()
+    .int()
+    .positive()
+    .describe("1-indexed position of this lesson slot within the milestone"),
+  suggestedTopic: z
+    .string()
+    .describe("Concise topic/title for this lesson (max 80 chars)"),
+  focusAreas: z
+    .string()
+    .describe(
+      "Brief description of what this lesson focuses on and how it progresses toward the milestone goal (1–2 sentences)"
+    ),
+  goalsAddressed: z
+    .array(z.object({ text: z.string() }))
+    .describe(
+      "Which milestone learning goals this slot primarily addresses. Can be empty if this slot is purely preparatory."
+    ),
+});
+
+export const arcGenerationSchema = z.object({
+  slots: z
+    .array(arcSlotSchema)
+    .min(1)
+    .describe(
+      "Ordered lesson slots — one per planned lesson in the milestone, distributed to progressively reach all milestone goals"
+    ),
+});
+
+export type ArcSlotOutput = z.infer<typeof arcSlotSchema>;
+export type ArcGenerationOutput = z.infer<typeof arcGenerationSchema>;
+
 export const transitionSummarySchema = z.object({
   summary: z
     .string()

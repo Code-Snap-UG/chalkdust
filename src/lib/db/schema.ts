@@ -8,6 +8,7 @@ import {
   jsonb,
   uuid,
   primaryKey,
+  boolean,
   AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -92,6 +93,21 @@ export const seriesMilestones = pgTable("series_milestones", {
   estimatedLessons: integer("estimated_lessons").notNull().default(1),
   sortOrder: integer("sort_order").notNull().default(0),
   status: varchar("status", { length: 20 }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const milestoneLessonSlots = pgTable("milestone_lesson_slots", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  milestoneId: uuid("milestone_id")
+    .references(() => seriesMilestones.id, { onDelete: "cascade" })
+    .notNull(),
+  position: integer("position").notNull(),
+  suggestedTopic: varchar("suggested_topic", { length: 500 }).notNull(),
+  focusAreas: text("focus_areas"),
+  goalsAddressed: jsonb("goals_addressed").notNull().default([]),
+  notes: text("notes"),
+  isStale: boolean("is_stale").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -228,6 +244,17 @@ export const seriesMilestonesRelations = relations(
       references: [lessonSeries.id],
     }),
     lessonPlans: many(lessonPlans),
+    lessonSlots: many(milestoneLessonSlots),
+  })
+);
+
+export const milestoneLessonSlotsRelations = relations(
+  milestoneLessonSlots,
+  ({ one }) => ({
+    milestone: one(seriesMilestones, {
+      fields: [milestoneLessonSlots.milestoneId],
+      references: [seriesMilestones.id],
+    }),
   })
 );
 

@@ -7,6 +7,7 @@ import {
   seriesCurriculumTopics,
   lessonPlans,
   diaryEntries,
+  milestoneLessonSlots,
 } from "@/lib/db/schema";
 import { eq, asc, desc, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -107,6 +108,15 @@ export async function getSeriesWithDetails(seriesId: string) {
       .where(eq(seriesCurriculumTopics.seriesId, seriesId)),
   ]);
 
+  const milestoneIds = milestones.map((m) => m.id);
+  const allSlots = milestoneIds.length
+    ? await db
+        .select()
+        .from(milestoneLessonSlots)
+        .where(inArray(milestoneLessonSlots.milestoneId, milestoneIds))
+        .orderBy(asc(milestoneLessonSlots.position))
+    : [];
+
   const planIds = plans.filter((p) => p.id).map((p) => p.id);
   const diaries = planIds.length
     ? await db
@@ -121,12 +131,14 @@ export async function getSeriesWithDetails(seriesId: string) {
 
   const milestonesWithPlans = milestones.map((m) => {
     const milestonePlans = plans.filter((p) => p.milestoneId === m.id);
+    const milestoneSlots = allSlots.filter((s) => s.milestoneId === m.id);
     return {
       ...m,
       lessonPlans: milestonePlans.map((p) => ({
         ...p,
         diaryEntry: diaryByPlanId.get(p.id) ?? null,
       })),
+      lessonSlots: milestoneSlots,
     };
   });
 

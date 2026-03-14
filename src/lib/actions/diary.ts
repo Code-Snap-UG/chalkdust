@@ -10,6 +10,7 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log } from "@/lib/logger";
+import { markSlotsStale } from "@/lib/actions/slots";
 
 export async function getDiaryEntries(classGroupId: string) {
   return db
@@ -48,6 +49,16 @@ export async function updateDiaryEntry(
 
       if (updates.progressStatus) {
         await syncMilestoneStatus(updated.lessonPlanId);
+
+        // Flag all slots in this milestone as stale when a lesson deviates
+        // or is only partially completed — downstream slots may need rethinking.
+        if (
+          updates.progressStatus === "deviated" ||
+          updates.progressStatus === "partial"
+        ) {
+          const milestoneId = await getMilestoneIdForPlan(updated.lessonPlanId);
+          if (milestoneId) await markSlotsStale(milestoneId);
+        }
       }
     }
     return updated;
@@ -55,6 +66,18 @@ export async function updateDiaryEntry(
     log.error("action.diary.update", { input: { id, updates }, error });
     throw error;
   }
+}
+
+async function getMilestoneIdForPlan(
+  lessonPlanId: string | null
+): Promise<string | null> {
+  if (!lessonPlanId) return null;
+  const [plan] = await db
+    .select({ milestoneId: lessonPlans.milestoneId })
+    .from(lessonPlans)
+    .where(eq(lessonPlans.id, lessonPlanId))
+    .limit(1);
+  return plan?.milestoneId ?? null;
 }
 
 async function syncMilestoneStatus(lessonPlanId: string | null) {

@@ -86,6 +86,9 @@ export default function PlanLessonPage() {
 
   const seriesIdParam = searchParams.get("seriesId");
   const milestoneIdParam = searchParams.get("milestoneId");
+  const slotTopicParam = searchParams.get("slotTopic");
+  const slotFocusParam = searchParams.get("slotFocus");
+  const slotGoalsParam = searchParams.get("slotGoals");
 
   const [generating, setGenerating] = useState(false);
   const [plan, setPlan] = useState<LessonPlan | null>(null);
@@ -145,8 +148,14 @@ export default function PlanLessonPage() {
       .catch(() => {});
   }, [selectedSeriesId]);
 
-  // Pre-populate form from milestone data
+  // Pre-populate form: slot params take priority over milestone-level data
   useEffect(() => {
+    if (slotTopicParam) {
+      setTopicFreeText(slotTopicParam);
+      if (slotGoalsParam) setLearningGoals(slotGoalsParam);
+      if (slotFocusParam) setAdditionalNotes(slotFocusParam);
+      return;
+    }
     if (!seriesInfo || !selectedMilestoneId) return;
     const milestone = seriesInfo.milestones.find(
       (m) => m.id === selectedMilestoneId
@@ -157,7 +166,7 @@ export default function PlanLessonPage() {
         setLearningGoals(milestone.learningGoals.map((g) => g.text).join("; "));
       }
     }
-  }, [seriesInfo, selectedMilestoneId]);
+  }, [seriesInfo, selectedMilestoneId, slotTopicParam]);
 
   // Redirect if the class is archived
   useEffect(() => {
@@ -277,6 +286,11 @@ export default function PlanLessonPage() {
                 {seriesInfo.milestones.find(
                   (m) => m.id === selectedMilestoneId
                 )?.title || ""}
+              </p>
+            )}
+            {slotTopicParam && (
+              <p className="mt-0.5 text-xs text-primary/80">
+                Stundenverteilung: {slotTopicParam}
               </p>
             )}
           </div>
