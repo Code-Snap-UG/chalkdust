@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Pencil, Loader2 } from "lucide-react";
+import { Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 type HomeworkSectionProps = {
@@ -54,73 +53,67 @@ export function HomeworkSection({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Home className="size-4" />
-            Hausaufgaben
-          </CardTitle>
-          {!isEditing && (
+    <section className="border-t pt-5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+          Hausaufgaben
+        </p>
+        {!isEditing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-foreground"
+            onClick={handleEdit}
+            title="Bearbeiten"
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      {isEditing ? (
+        <div className="flex flex-col gap-3">
+          <Textarea
+            rows={2}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Hausaufgaben eingeben… (leer lassen zum Entfernen)"
+            className="resize-none text-sm"
+            autoFocus
+          />
+          {saveError && (
+            <p className="text-xs text-destructive">{saveError}</p>
+          )}
+          <div className="flex items-center justify-end gap-2">
             <Button
               variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-foreground"
-              onClick={handleEdit}
-              title="Bearbeiten"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleCancel}
+              disabled={isSaving}
             >
-              <Pencil className="size-3.5" />
+              Abbrechen
             </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <div className="flex flex-col gap-3">
-            <Textarea
-              rows={2}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Hausaufgaben eingeben… (leer lassen zum Entfernen)"
-              className="text-sm resize-none"
-              autoFocus
-            />
-
-            {saveError && (
-              <p className="text-xs text-destructive">{saveError}</p>
-            )}
-
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving && (
-                  <Loader2 className="mr-1.5 size-3 animate-spin" />
-                )}
-                Speichern
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving && (
+                <Loader2 className="mr-1.5 size-3 animate-spin" />
+              )}
+              Speichern
+            </Button>
           </div>
-        ) : initialHomework ? (
-          <p className="text-sm">{initialHomework}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            Noch keine Hausaufgaben geplant.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      ) : initialHomework ? (
+        <p className="text-sm leading-relaxed">{initialHomework}</p>
+      ) : (
+        <p className="text-sm italic text-muted-foreground/60">
+          Noch keine Hausaufgaben geplant.
+        </p>
+      )}
+    </section>
   );
 }

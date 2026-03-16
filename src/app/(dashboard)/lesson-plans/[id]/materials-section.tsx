@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Pencil, Plus, Trash2, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -23,6 +21,10 @@ const MATERIAL_TYPE_OPTIONS = [
   { value: "textbook", label: "Schulbuch" },
   { value: "other", label: "Sonstiges" },
 ] as const;
+
+const MATERIAL_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  MATERIAL_TYPE_OPTIONS.map((o) => [o.value, o.label])
+);
 
 type MaterialItemState =
   | { type: "view" }
@@ -85,7 +87,6 @@ export function MaterialsSection({
   }
 
   function handleCancel(index: number) {
-    // Remove if it was a blank newly-added item
     if (!materials[index]?.title) {
       const next = materials.filter((_, i) => i !== index);
       setMaterials(next);
@@ -154,209 +155,198 @@ export function MaterialsSection({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <BookOpen className="size-4" />
-          Materialien
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          {materials.length === 0 && (
-            <li className="text-sm text-muted-foreground">
-              Noch keine Materialien.
-            </li>
-          )}
+    <section className="border-t pt-5">
+      <p className="mb-3 text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+        Materialien
+      </p>
 
-          {materials.map((mat, i) => {
-            const state = getState(i);
+      <ul className="flex flex-col gap-3">
+        {materials.length === 0 && (
+          <li className="text-sm text-muted-foreground">
+            Noch keine Materialien.
+          </li>
+        )}
 
-            if (state.type === "edit") {
-              return (
-                <li key={i} className="rounded-lg border p-3 flex flex-col gap-3">
-                  {/* Title */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Titel
-                    </label>
-                    <Input
-                      value={state.draft.title}
-                      onChange={(e) =>
-                        setItemState(i, {
-                          ...state,
-                          draft: { ...state.draft, title: e.target.value },
-                          error: null,
-                        })
-                      }
-                      placeholder="z.B. Arbeitsblatt Brüche"
-                      className="h-8 text-sm"
-                      autoFocus
-                    />
-                  </div>
+        {materials.map((mat, i) => {
+          const state = getState(i);
 
-                  {/* Type */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Typ
-                    </label>
-                    <Select
-                      value={state.draft.type}
-                      onValueChange={(v) =>
-                        setItemState(i, {
-                          ...state,
-                          draft: { ...state.draft, type: v },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MATERIAL_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          if (state.type === "edit") {
+            return (
+              <li key={i} className="flex flex-col gap-3 rounded-sm border border-border/60 p-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Titel
+                  </label>
+                  <Input
+                    value={state.draft.title}
+                    onChange={(e) =>
+                      setItemState(i, {
+                        ...state,
+                        draft: { ...state.draft, title: e.target.value },
+                        error: null,
+                      })
+                    }
+                    placeholder="z.B. Arbeitsblatt Brüche"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                </div>
 
-                  {/* Description */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Beschreibung
-                    </label>
-                    <Textarea
-                      rows={2}
-                      value={state.draft.description}
-                      onChange={(e) =>
-                        setItemState(i, {
-                          ...state,
-                          draft: { ...state.draft, description: e.target.value },
-                        })
-                      }
-                      placeholder="Kurze Beschreibung…"
-                      className="text-sm resize-none"
-                    />
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Typ
+                  </label>
+                  <Select
+                    value={state.draft.type}
+                    onValueChange={(v) =>
+                      setItemState(i, {
+                        ...state,
+                        draft: { ...state.draft, type: v },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MATERIAL_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  {state.error && (
-                    <p className="text-xs text-destructive">{state.error}</p>
-                  )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Beschreibung
+                  </label>
+                  <Textarea
+                    rows={2}
+                    value={state.draft.description}
+                    onChange={(e) =>
+                      setItemState(i, {
+                        ...state,
+                        draft: { ...state.draft, description: e.target.value },
+                      })
+                    }
+                    placeholder="Kurze Beschreibung…"
+                    className="resize-none text-sm"
+                  />
+                </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {state.showDeleteConfirm ? (
-                        <>
-                          <span className="text-xs text-muted-foreground">
-                            Wirklich löschen?
-                          </span>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleDelete(i)}
-                          >
-                            Ja, löschen
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() =>
-                              setItemState(i, {
-                                ...state,
-                                showDeleteConfirm: false,
-                              })
-                            }
-                          >
-                            Abbrechen
-                          </Button>
-                        </>
-                      ) : (
+                {state.error && (
+                  <p className="text-xs text-destructive">{state.error}</p>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {state.showDeleteConfirm ? (
+                      <>
+                        <span className="text-xs text-muted-foreground">
+                          Wirklich löschen?
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => handleDelete(i)}
+                        >
+                          Ja, löschen
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                          className="h-7 text-xs"
                           onClick={() =>
                             setItemState(i, {
                               ...state,
-                              showDeleteConfirm: true,
+                              showDeleteConfirm: false,
                             })
                           }
                         >
-                          <Trash2 className="mr-1.5 size-3.5" />
-                          Löschen
+                          Abbrechen
                         </Button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
+                      </>
+                    ) : (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => handleCancel(i)}
-                        disabled={state.saving}
+                        className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          setItemState(i, {
+                            ...state,
+                            showDeleteConfirm: true,
+                          })
+                        }
                       >
-                        Abbrechen
+                        <Trash2 className="mr-1.5 size-3.5" />
+                        Löschen
                       </Button>
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => handleSave(i)}
-                        disabled={state.saving}
-                      >
-                        {state.saving && (
-                          <Loader2 className="mr-1.5 size-3 animate-spin" />
-                        )}
-                        Speichern
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                </li>
-              );
-            }
-
-            return (
-              <li key={i} className="group flex items-start gap-2 text-sm">
-                <Badge
-                  variant="secondary"
-                  className="mt-0.5 shrink-0 text-xs"
-                >
-                  {mat.type}
-                </Badge>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium">{mat.title}</span>
-                  {mat.description && (
-                    <p className="text-muted-foreground">{mat.description}</p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => handleCancel(i)}
+                      disabled={state.saving}
+                    >
+                      Abbrechen
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => handleSave(i)}
+                      disabled={state.saving}
+                    >
+                      {state.saving && (
+                        <Loader2 className="mr-1.5 size-3 animate-spin" />
+                      )}
+                      Speichern
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 shrink-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
-                  onClick={() => handleEdit(i)}
-                  title="Bearbeiten"
-                >
-                  <Pencil className="size-3" />
-                </Button>
               </li>
             );
-          })}
-        </ul>
+          }
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-3 text-muted-foreground hover:text-foreground"
-          onClick={handleAddMaterial}
-        >
-          <Plus className="mr-1.5 size-4" />
-          Material hinzufügen
-        </Button>
-      </CardContent>
-    </Card>
+          return (
+            <li key={i} className="group flex items-start gap-3 text-sm">
+              <span className="mt-0.5 shrink-0 text-[0.6rem] font-semibold tracking-[0.08em] uppercase text-muted-foreground/60 w-20">
+                {MATERIAL_TYPE_LABELS[mat.type] ?? mat.type}
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="font-medium">{mat.title}</span>
+                {mat.description && (
+                  <p className="mt-0.5 text-muted-foreground">{mat.description}</p>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                onClick={() => handleEdit(i)}
+                title="Bearbeiten"
+              >
+                <Pencil className="size-3" />
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-3 text-muted-foreground hover:text-foreground"
+        onClick={handleAddMaterial}
+      >
+        <Plus className="mr-1.5 size-4" />
+        Material hinzufügen
+      </Button>
+    </section>
   );
 }

@@ -8,7 +8,7 @@ import { getLessonPlans } from "@/lib/actions/lesson-plans";
 import { getClassFavorites } from "@/lib/actions/snippets";
 import { getSeriesForClass } from "@/lib/actions/series";
 import { notFound } from "next/navigation";
-import { ChevronRight, Layers, PencilLine, Sparkles } from "lucide-react";
+import { ChevronRight, PencilLine, Sparkles } from "lucide-react";
 import { CloseYearButton } from "./close-year-button";
 
 export default async function ClassDetailPage({
@@ -167,19 +167,18 @@ export default async function ClassDetailPage({
         </div>
       </div>
 
-      {/* Quick links — nav rows with clear affordance */}
-      <div className="flex flex-col border-t">
+      {/* Quick links — multi-column grid, mirrors class overview pattern */}
+      <div className="grid grid-cols-1 gap-x-8 border-t sm:grid-cols-2">
         {quickLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="group flex items-center gap-3 border-b py-3.5 transition-colors hover:bg-muted/40 -mx-1 px-1 rounded-sm"
+            className="group -mx-1 flex flex-col gap-1 rounded-sm border-b px-1 py-5 transition-colors hover:bg-muted/40"
           >
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">{link.label}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{link.description}</p>
-            </div>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
+            <p className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
+              {link.label}
+            </p>
+            <p className="text-xs text-muted-foreground">{link.description}</p>
           </Link>
         ))}
       </div>

@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Bookmark, Clock, Star, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { lessonSnippets, classGroups } from "@/lib/db/schema";
 
 type Snippet = typeof lessonSnippets.$inferSelect;
@@ -21,6 +20,8 @@ type Props = {
   favoritedIds: string[];
   activeClasses: ClassGroup[];
 };
+
+const PHASE_ORDER = ["Einstieg", "Erarbeitung", "Sicherung", "Abschluss"];
 
 // ─── Class picker popover (global view, no class context) ────────────────────
 
@@ -83,7 +84,6 @@ function ClassPickerPopover({
         });
       }
     } catch {
-      // revert on error
       setCheckedIds((prev) => {
         const next = new Set(prev);
         if (isCurrentlyChecked) next.add(classGroupId);
@@ -110,11 +110,12 @@ function ClassPickerPopover({
           aria-label="Zur Klasse hinzufügen"
         >
           <Star
-            className={`size-4 transition-colors ${
+            className={cn(
+              "size-4 transition-colors",
               starFilled
-                ? "fill-amber-400 text-amber-400"
-                : "text-muted-foreground"
-            }`}
+                ? "fill-primary text-primary"
+                : "text-muted-foreground/40"
+            )}
           />
         </button>
       </PopoverTrigger>
@@ -145,11 +146,12 @@ function ClassPickerPopover({
                     disabled={isPending}
                   >
                     <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                      className={cn(
+                        "flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
                         checked
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-input"
-                      }`}
+                      )}
                     >
                       {checked && (
                         <svg
@@ -238,7 +240,6 @@ export function SnippetsClient({
           });
         }
       } catch {
-        // revert
         setLocalFavorites((prev) => {
           const next = new Set(prev);
           if (isFav) next.add(snippetId);
@@ -270,35 +271,45 @@ export function SnippetsClient({
 
   if (snippets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-          <Bookmark className="size-7 text-primary" />
-        </div>
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Noch keine Bausteine</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Öffne einen Unterrichtsplan und speichere eine Phase über das{" "}
-            <span className="inline-flex items-center gap-0.5 font-medium">
-              <Bookmark className="inline size-3.5" />
-            </span>
-            -Symbol als Baustein.
-          </p>
-        </div>
+      <div className="pt-8">
+        <p className="font-display text-lg font-medium text-muted-foreground/60">
+          Noch keine Bausteine gespeichert.
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Öffne einen Unterrichtsplan und speichere eine Phase über das
+          Lesezeichen-Symbol als Baustein.
+        </p>
       </div>
     );
   }
 
+  // Group filtered snippets by phase
+  const phaseGroups = new Map<string, Snippet[]>();
+  for (const snippet of filtered) {
+    const phase = snippet.phase ?? "Sonstige";
+    if (!phaseGroups.has(phase)) phaseGroups.set(phase, []);
+    phaseGroups.get(phase)!.push(snippet);
+  }
+
+  const sortedPhases = Array.from(phaseGroups.keys()).sort((a, b) => {
+    const ai = PHASE_ORDER.indexOf(a);
+    const bi = PHASE_ORDER.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b, "de");
+  });
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Class favorites toggle — only shown in class context */}
+      <div className="flex flex-wrap items-center gap-1.5">
         {classGroupId && (
           <>
             <Button
               variant={showFavoritesOnly ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 rounded-full px-3 text-xs"
+              className="h-7 text-xs"
               onClick={() => setShowFavoritesOnly(true)}
             >
               <Star className="mr-1.5 size-3" />
@@ -307,7 +318,7 @@ export function SnippetsClient({
             <Button
               variant={!showFavoritesOnly ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 rounded-full px-3 text-xs"
+              className="h-7 text-xs"
               onClick={() => setShowFavoritesOnly(false)}
             >
               Alle Bausteine
@@ -318,7 +329,6 @@ export function SnippetsClient({
           </>
         )}
 
-        {/* Tag filter */}
         {allTags.length > 0 && (
           <>
             {!classGroupId && (
@@ -327,17 +337,17 @@ export function SnippetsClient({
             <Button
               variant={activeTags.length === 0 ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 rounded-full px-3 text-xs"
+              className="h-7 text-xs"
               onClick={() => setActiveTags([])}
             >
-              Alle Tags
+              Alle
             </Button>
             {allTags.map((tag) => (
               <Button
                 key={tag}
                 variant={activeTags.includes(tag) ? "secondary" : "ghost"}
                 size="sm"
-                className="h-7 rounded-full px-3 text-xs"
+                className="h-7 text-xs"
                 onClick={() => toggleTag(tag)}
               >
                 {tag}
@@ -348,108 +358,119 @@ export function SnippetsClient({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/20 p-10 text-center">
-          <Star className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {showFavoritesOnly && classGroupId
-              ? 'Noch keine Bausteine für diese Klasse gemerkt. Wechsle zu "Alle Bausteine" und markiere welche mit dem Stern.'
-              : "Keine Bausteine für diesen Filter."}
+        <div className="pt-4">
+          <p className="font-display text-lg font-medium text-muted-foreground/60">
+            Keine Bausteine gefunden.
           </p>
+          {showFavoritesOnly && classGroupId && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Noch keine Bausteine für diese Klasse gemerkt.{" "}
+              <button
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => setShowFavoritesOnly(false)}
+              >
+                Alle Bausteine anzeigen
+              </button>{" "}
+              und mit dem Stern markieren.
+            </p>
+          )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((snippet) => {
-            const tags = (snippet.tags as string[]) ?? [];
-            const isFav = localFavorites.has(snippet.id);
-            const isToggling = togglingIds.has(snippet.id);
-
+        <div className="flex flex-col gap-8">
+          {sortedPhases.map((phase) => {
+            const group = phaseGroups.get(phase)!;
             return (
-              <Card key={snippet.id} className="relative">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {snippet.phase}
-                    </Badge>
-                    <div className="flex items-center gap-1.5">
-                      {snippet.durationMinutes != null && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="size-3" />
-                          {snippet.durationMinutes} Min.
-                        </span>
-                      )}
-                      {/* Star — direct toggle in class context, popover in global view */}
-                      {classGroupId ? (
-                        <button
-                          className="rounded p-0.5 transition-colors hover:bg-muted disabled:opacity-40"
-                          onClick={() =>
-                            handleClassContextToggle(snippet.id)
-                          }
-                          disabled={isToggling}
-                          aria-label={
-                            isFav
-                              ? "Aus Klassen-Favoriten entfernen"
-                              : "Zu Klassen-Favoriten hinzufügen"
-                          }
-                        >
-                          {isToggling ? (
-                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                          ) : (
-                            <Star
-                              className={`size-4 transition-colors ${
+              <section key={phase} className="border-t pt-5">
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+                    {phase}
+                  </p>
+                  <span className="text-xs tabular-nums text-muted-foreground/50">
+                    {group.length}
+                  </span>
+                </div>
+
+                <ul>
+                  {group.map((snippet) => {
+                    const tags = (snippet.tags as string[]) ?? [];
+                    const isFav = localFavorites.has(snippet.id);
+                    const isToggling = togglingIds.has(snippet.id);
+
+                    const meta = [
+                      snippet.method,
+                      snippet.durationMinutes != null
+                        ? `${snippet.durationMinutes} Min.`
+                        : null,
+                      ...tags,
+                    ].filter(Boolean);
+
+                    return (
+                      <li
+                        key={snippet.id}
+                        className="group flex items-start gap-3 border-b py-3.5 last:border-b-0"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium leading-snug">
+                            {snippet.title}
+                          </p>
+                          {snippet.description && (
+                            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                              {snippet.description}
+                            </p>
+                          )}
+                          {meta.length > 0 && (
+                            <p className="mt-1.5 text-xs text-muted-foreground/60">
+                              {meta.join(" · ")}
+                            </p>
+                          )}
+                          {snippet.notes && (
+                            <p className="mt-1 text-xs italic text-muted-foreground/50">
+                              {snippet.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Star toggle */}
+                        <div className="mt-0.5 shrink-0">
+                          {classGroupId ? (
+                            <button
+                              className="rounded p-0.5 transition-colors hover:bg-muted disabled:opacity-40"
+                              onClick={() =>
+                                handleClassContextToggle(snippet.id)
+                              }
+                              disabled={isToggling}
+                              aria-label={
                                 isFav
-                                  ? "fill-amber-400 text-amber-400"
-                                  : "text-muted-foreground"
-                              }`}
+                                  ? "Aus Klassen-Favoriten entfernen"
+                                  : "Zu Klassen-Favoriten hinzufügen"
+                              }
+                            >
+                              {isToggling ? (
+                                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <Star
+                                  className={cn(
+                                    "size-4 transition-colors",
+                                    isFav
+                                      ? "fill-primary text-primary"
+                                      : "text-muted-foreground/30 group-hover:text-muted-foreground/60"
+                                  )}
+                                />
+                              )}
+                            </button>
+                          ) : (
+                            <ClassPickerPopover
+                              snippetId={snippet.id}
+                              activeClasses={activeClasses}
+                              isFavoritedAnywhere={isFav}
                             />
                           )}
-                        </button>
-                      ) : (
-                        <ClassPickerPopover
-                          snippetId={snippet.id}
-                          activeClasses={activeClasses}
-                          isFavoritedAnywhere={isFav}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <CardTitle className="mt-2 text-base leading-snug">
-                    {snippet.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
-                    {snippet.description}
-                  </p>
-
-                  {snippet.method && (
-                    <Badge
-                      variant="outline"
-                      className="w-fit text-xs font-normal"
-                    >
-                      {snippet.method}
-                    </Badge>
-                  )}
-
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {snippet.notes && (
-                    <p className="text-xs italic text-muted-foreground">
-                      {snippet.notes}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             );
           })}
         </div>

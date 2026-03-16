@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Library, Plus } from "lucide-react";
+import { Library, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimelinePhaseRow } from "./timeline-phase-row";
 import { SnippetDrawer } from "./snippet-drawer";
 import type { TimelinePhase } from "@/lib/ai/schemas";
@@ -39,21 +38,21 @@ function DurationIndicator({
 }) {
   if (total === target) {
     return (
-      <span className="text-xs font-medium text-emerald-600">
-        {total}/{target} Min.
+      <span className="tabular-nums text-xs font-medium text-muted-foreground">
+        {total}/{target}&thinsp;Min.
       </span>
     );
   }
   if (total < target) {
     return (
-      <span className="text-xs font-medium text-amber-500">
-        ⚠ {total}/{target} Min.
+      <span className="tabular-nums text-xs font-medium text-primary">
+        ⚠&thinsp;{total}/{target}&thinsp;Min.
       </span>
     );
   }
   return (
-    <span className="text-xs font-medium text-destructive">
-      ⚠ {total}/{target} Min.
+    <span className="tabular-nums text-xs font-medium text-destructive">
+      ⚠&thinsp;{total}/{target}&thinsp;Min.
     </span>
   );
 }
@@ -167,75 +166,71 @@ export function TimelineSection({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="size-4" />
-              Stundenablauf
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <DurationIndicator
-                total={totalMinutes}
-                target={lessonDurationMinutes}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setIsSnippetDrawerOpen(true)}
-              >
-                <Library className="size-3.5" />
-                Snippets
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {phases.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Noch keine Phasen — füge deine erste hinzu.
-            </p>
-          )}
-
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={phaseIds}
-              strategy={verticalListSortingStrategy}
+      <section className="border-t pt-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+            Stundenablauf
+          </p>
+          <div className="flex items-center gap-2">
+            <DurationIndicator
+              total={totalMinutes}
+              target={lessonDurationMinutes}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setIsSnippetDrawerOpen(true)}
             >
-              {phases.map((phase, i) => (
-                <TimelinePhaseRow
-                  key={phaseIds[i]}
-                  id={phaseIds[i]}
-                  phase={phase}
-                  index={i}
-                  isEditing={editingIndex === i}
-                  lessonPlanId={lessonPlanId}
-                  onDraftDurationChange={handleDraftDurationChange}
-                  onEdit={handleEdit}
-                  onCancel={handleCancel}
-                  onSave={handleSave}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+              <Library className="size-3.5" />
+              Snippets
+            </Button>
+          </div>
+        </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-1 self-start text-muted-foreground hover:text-foreground"
-            onClick={handleAddPhase}
+        {phases.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Noch keine Phasen — füge deine erste hinzu.
+          </p>
+        )}
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={phaseIds}
+            strategy={verticalListSortingStrategy}
           >
-            <Plus className="mr-1.5 size-4" />
-            Phase hinzufügen
-          </Button>
-        </CardContent>
-      </Card>
+          {phases.map((phase, i) => (
+            <TimelinePhaseRow
+              key={phaseIds[i]}
+              id={phaseIds[i]}
+              phase={phase}
+              index={i}
+              isEditing={editingIndex === i}
+              lessonPlanId={lessonPlanId}
+              onDraftDurationChange={handleDraftDurationChange}
+              onEdit={handleEdit}
+              onCancel={handleCancel}
+              onSave={handleSave}
+              onDelete={handleDelete}
+            />
+          ))}
+          </SortableContext>
+        </DndContext>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 text-muted-foreground hover:text-foreground"
+          onClick={handleAddPhase}
+        >
+          <Plus className="mr-1.5 size-4" />
+          Phase hinzufügen
+        </Button>
+      </section>
 
       <SnippetDrawer
         open={isSnippetDrawerOpen}

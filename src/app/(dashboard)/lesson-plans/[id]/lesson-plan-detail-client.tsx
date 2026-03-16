@@ -4,16 +4,11 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Check,
-  CheckCircle,
-  FileEdit,
   Loader2,
-  MessageSquare,
   Pencil,
   Send,
   Sparkles,
@@ -26,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { LessonPlanOutput } from "@/lib/ai/schemas";
 import type { lessonPlans } from "@/lib/db/schema";
 import { TimelineSection } from "./timeline-section";
@@ -131,6 +127,7 @@ export function LessonPlanDetailClient({
     setPlan(toDisplayPlan(updated));
     setMetaState({ type: "view" });
   }
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(
@@ -206,7 +203,7 @@ export function LessonPlanDetailClient({
                 setMetaState({ ...metaState, topic: e.target.value, error: null })
               }
               placeholder="Thema der Stunde…"
-              className="text-xl font-bold h-auto py-1"
+              className="h-auto py-1 text-xl font-bold"
               autoFocus
             />
             <div className="flex flex-wrap items-center gap-2">
@@ -283,7 +280,7 @@ export function LessonPlanDetailClient({
             <Button
               variant="ghost"
               size="icon"
-              className="mt-0.5 size-7 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:text-foreground"
+              className="mt-0.5 size-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 [@media(hover:none)]:opacity-100"
               onClick={handleMetaEdit}
               title="Titel und Datum bearbeiten"
             >
@@ -291,44 +288,39 @@ export function LessonPlanDetailClient({
             </Button>
           </div>
         )}
-        <Badge variant={plan.status === "approved" ? "default" : "secondary"}>
-          {plan.status === "approved" ? (
-            <>
-              <CheckCircle className="mr-1 size-3" />
-              Freigegeben
-            </>
-          ) : (
-            <>
-              <FileEdit className="mr-1 size-3" />
-              Entwurf
-            </>
+
+        <span
+          className={cn(
+            "mt-1 shrink-0 text-[0.65rem] font-semibold tracking-[0.1em] uppercase",
+            plan.status === "approved"
+              ? "text-primary"
+              : "text-muted-foreground/40"
           )}
-        </Badge>
+        >
+          {plan.status === "approved" ? "Freigegeben" : "Entwurf"}
+        </span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Left: Plan content */}
         <div className="flex flex-col gap-6">
           {showGeneratedNotice && (
-            <Card className="border-primary/30 bg-primary/5">
-              <CardContent className="flex items-center justify-between gap-3 py-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="size-4 text-primary" />
-                  <p>
-                    Plan erstellt. Du kannst ihn jetzt links manuell oder rechts
-                    mit ChAi verfeinern.
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setShowGeneratedNotice(false)}
-                >
-                  Schließen
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="flex items-center justify-between gap-3 border-l-2 border-primary/40 pl-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="size-3.5 shrink-0 text-primary" />
+                <p>
+                  Plan erstellt. Bearbeite ihn links oder verfeinere ihn mit ChAi.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 px-2 text-xs"
+                onClick={() => setShowGeneratedNotice(false)}
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
           )}
 
           <ObjectivesSection
@@ -360,82 +352,86 @@ export function LessonPlanDetailClient({
         </div>
 
         {/* Right: Chat + Approve */}
-        <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <MessageSquare className="size-4" />
-                ChAi - Plan verfeinern
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {messages.length > 0 && (
-                <div className="mb-3 max-h-64 space-y-2 overflow-y-auto">
-                  {messages.map((m) => {
-                    const hasText = m.parts.some(
-                      (p) => p.type === "text" && p.text.trim()
-                    );
-                    if (!hasText && m.role === "assistant") return null;
-                    return (
-                      <div
-                        key={m.id}
-                        className={`text-sm ${m.role === "user" ? "text-foreground" : "text-muted-foreground"}`}
-                      >
-                        <span className="font-medium">
-                          {m.role === "user" ? "Du: " : "KI: "}
-                        </span>
-                        {m.parts.map((part, i) =>
-                          part.type === "text" ? (
-                            <span key={i}>{part.text}</span>
-                          ) : null
-                        )}
-                      </div>
-                    );
-                  })}
-                  {(status === "streaming" || status === "submitted") && (
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Loader2 className="size-3 animate-spin" />
-                      KI antwortet...
+        <div className="flex flex-col gap-5 lg:sticky lg:top-6 lg:self-start">
+          {/* Chat panel */}
+          <div className="border-l-2 border-border pl-4">
+            <p className="mb-3 text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+              ChAi verfeinern
+            </p>
+
+            {messages.length > 0 && (
+              <div className="mb-3 max-h-64 space-y-2.5 overflow-y-auto">
+                {messages.map((m) => {
+                  const hasText = m.parts.some(
+                    (p) => p.type === "text" && p.text.trim()
+                  );
+                  if (!hasText && m.role === "assistant") return null;
+                  return (
+                    <div
+                      key={m.id}
+                      className={cn(
+                        "text-sm",
+                        m.role === "user"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <span className="font-medium">
+                        {m.role === "user" ? "Du: " : "KI: "}
+                      </span>
+                      {m.parts.map((part, i) =>
+                        part.type === "text" ? (
+                          <span key={i}>{part.text}</span>
+                        ) : null
+                      )}
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-              {error && (
-                <p className="mb-3 text-sm text-destructive">
-                  Fehler: {error.message}
-                </p>
-              )}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (chatInput.trim() && status === "ready") {
-                    sendMessage(
-                      { text: chatInput },
-                      { body: { lessonPlanId: initialPlan.id } }
-                    );
-                    setChatInput("");
-                  }
-                }}
-                className="flex items-center gap-2"
+                  );
+                })}
+                {(status === "streaming" || status === "submitted") && (
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Loader2 className="size-3 animate-spin" />
+                    KI antwortet...
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {error && (
+              <p className="mb-3 text-sm text-destructive">
+                Fehler: {error.message}
+              </p>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (chatInput.trim() && status === "ready") {
+                  sendMessage(
+                    { text: chatInput },
+                    { body: { lessonPlanId: initialPlan.id } }
+                  );
+                  setChatInput("");
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <Input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="z.B. Gruppenarbeit kürzer…"
+                className="flex-1"
+                disabled={status !== "ready"}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={status !== "ready" || !chatInput.trim()}
               >
-                <Input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="z.B. Mach die Gruppenarbeit kürzer..."
-                  className="flex-1"
-                  disabled={status !== "ready"}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={status !== "ready" || !chatInput.trim()}
-                >
-                  <Send className="size-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                <Send className="size-4" />
+              </Button>
+            </form>
+          </div>
 
           {plan.status === "draft" && (
             <Button

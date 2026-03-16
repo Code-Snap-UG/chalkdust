@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Loader2, Users } from "lucide-react";
+import { Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { Differentiation } from "@/lib/ai/schemas";
 
@@ -54,108 +53,108 @@ export function DifferentiationSection({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="size-4" />
-            Differenzierung
-          </CardTitle>
-          {!isEditing && (
+    <section className="border-t pt-5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+          Differenzierung
+        </p>
+        {!isEditing && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-foreground"
+            onClick={handleEdit}
+            title="Bearbeiten"
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+        )}
+      </div>
+
+      {isEditing ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Schwächere Schüler
+            </label>
+            <Textarea
+              rows={3}
+              value={draft.weaker}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, weaker: e.target.value }))
+              }
+              placeholder="Anpassungen für Schüler mit mehr Unterstützungsbedarf…"
+              className="resize-none text-sm"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Stärkere Schüler
+            </label>
+            <Textarea
+              rows={3}
+              value={draft.stronger}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, stronger: e.target.value }))
+              }
+              placeholder="Erweiterungen für Schüler mit mehr Herausforderungsbedarf…"
+              className="resize-none text-sm"
+            />
+          </div>
+
+          {saveError && (
+            <p className="text-xs text-destructive">{saveError}</p>
+          )}
+
+          <div className="flex items-center justify-end gap-2">
             <Button
               variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-foreground"
-              onClick={handleEdit}
-              title="Bearbeiten"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleCancel}
+              disabled={isSaving}
             >
-              <Pencil className="size-3.5" />
+              Abbrechen
             </Button>
-          )}
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving && (
+                <Loader2 className="mr-1.5 size-3 animate-spin" />
+              )}
+              Speichern
+            </Button>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {isEditing ? (
-          <>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Schwächere Schüler
-              </label>
-              <Textarea
-                rows={3}
-                value={draft.weaker}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, weaker: e.target.value }))
-                }
-                placeholder="Anpassungen für Schüler mit mehr Unterstützungsbedarf…"
-                className="text-sm resize-none"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Stärkere Schüler
-              </label>
-              <Textarea
-                rows={3}
-                value={draft.stronger}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, stronger: e.target.value }))
-                }
-                placeholder="Erweiterungen für Schüler mit mehr Herausforderungsbedarf…"
-                className="text-sm resize-none"
-              />
-            </div>
-
-            {saveError && (
-              <p className="text-xs text-destructive">{saveError}</p>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving && (
-                  <Loader2 className="mr-1.5 size-3 animate-spin" />
-                )}
-                Speichern
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <p className="text-sm font-medium">Schwächere Schüler</p>
-              <p className="text-sm text-muted-foreground">
-                {initialDifferentiation.weaker || (
-                  <span className="italic">Keine Angabe</span>
-                )}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Stärkere Schüler</p>
-              <p className="text-sm text-muted-foreground">
-                {initialDifferentiation.stronger || (
-                  <span className="italic">Keine Angabe</span>
-                )}
-              </p>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
+              Schwächere Schüler
+            </p>
+            <p className="text-sm leading-relaxed">
+              {initialDifferentiation.weaker || (
+                <span className="italic text-muted-foreground/60">Keine Angabe</span>
+              )}
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
+              Stärkere Schüler
+            </p>
+            <p className="text-sm leading-relaxed">
+              {initialDifferentiation.stronger || (
+                <span className="italic text-muted-foreground/60">Keine Angabe</span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

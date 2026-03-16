@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { GripVertical, Pencil, Trash2, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,7 +65,7 @@ export function TimelinePhaseRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
 
   const [draft, setDraft] = useState<TimelinePhase>(phase);
@@ -116,11 +115,11 @@ export function TimelinePhaseRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border">
+    <div ref={setNodeRef} style={style} className="border-b">
       {/* Header row — always visible */}
-      <div className="flex items-center gap-2 p-3">
+      <div className="flex items-center gap-2 py-2.5">
         <div
-          className={`shrink-0 text-muted-foreground/40 ${
+          className={`shrink-0 text-muted-foreground/30 ${
             isEditing
               ? "cursor-default"
               : "cursor-grab active:cursor-grabbing"
@@ -131,14 +130,14 @@ export function TimelinePhaseRow({
           <GripVertical className="size-4" />
         </div>
 
-        <span className="flex-1 font-medium text-sm">{phase.phase}</span>
+        <span className="flex-1 text-sm font-medium">{phase.phase}</span>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge variant="secondary" className="text-xs">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden text-[0.6rem] font-medium tracking-[0.08em] uppercase text-muted-foreground/60 sm:inline">
             {phase.method}
-          </Badge>
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {phase.durationMinutes} Min.
+          </span>
+          <span className="tabular-nums text-sm text-muted-foreground">
+            {phase.durationMinutes}&thinsp;Min.
           </span>
           <SaveSnippetDialog phase={phase} lessonPlanId={lessonPlanId} />
           <Button
@@ -155,14 +154,14 @@ export function TimelinePhaseRow({
 
       {/* Description — view mode only */}
       {!isEditing && phase.description && (
-        <p className="px-3 pb-3 text-sm text-muted-foreground">
+        <p className="pb-3 pl-6 text-sm leading-relaxed text-muted-foreground">
           {phase.description}
         </p>
       )}
 
       {/* Edit form — inline expand */}
       {isEditing && (
-        <div className="border-t px-3 pb-3 pt-3 flex flex-col gap-3">
+        <div className="pb-4 pl-6 flex flex-col gap-3">
           {/* Row 1: Phase name + Method */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
@@ -209,7 +208,7 @@ export function TimelinePhaseRow({
 
           {/* Row 2: Duration */}
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground shrink-0">
+            <label className="shrink-0 text-xs font-medium text-muted-foreground">
               Dauer
             </label>
             <Input
@@ -235,18 +234,16 @@ export function TimelinePhaseRow({
                 setDraft((d) => ({ ...d, description: e.target.value }))
               }
               placeholder="Was passiert in dieser Phase?"
-              className="text-sm resize-none"
+              className="resize-none text-sm"
             />
           </div>
 
-          {/* Error */}
           {saveError && (
             <p className="text-xs text-destructive">{saveError}</p>
           )}
 
           {/* Actions row */}
           <div className="flex items-center justify-between">
-            {/* Delete */}
             <div className="flex items-center gap-2">
               {showDeleteConfirm ? (
                 <>
@@ -283,7 +280,6 @@ export function TimelinePhaseRow({
               )}
             </div>
 
-            {/* Cancel / Save */}
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
