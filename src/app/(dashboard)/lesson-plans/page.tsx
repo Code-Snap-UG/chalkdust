@@ -35,7 +35,7 @@ export default async function LessonPlansPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-6">
 
       {/* Header */}
       <div>

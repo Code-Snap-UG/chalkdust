@@ -173,7 +173,7 @@ export default function LandingPage() {
                 className="ink-stage mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground"
                 style={{ animation: "inkFadeIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.45s both" }}
               >
-                Chalkdust ist der KI-Co-Pilot, den jede Lehrkraft verdient. Kein
+                Chalkdust ist der Co-Pilot, den jede Lehrkraft verdient. Kein
                 Chatbot, kein Template-Generator — ein Planungspartner, der deine
                 Klassen kennt, sich an sie erinnert und mit der Zeit besser wird.
               </p>
@@ -270,9 +270,9 @@ export default function LandingPage() {
             {loopSteps.map((step, i) => (
               <ScrollReveal key={step.label} delay={(i % 4) as 0 | 1 | 2 | 3 | 4} className="relative">
                 {/* Connector line between steps */}
-                {i < loopSteps.length - 1 && (
+                {/* {i < loopSteps.length - 1 && (
                   <div className="absolute right-0 top-6 hidden h-px w-full translate-x-1/2 bg-border sm:block" />
-                )}
+                )} */}
                 <div className="relative pr-8">
                   <div className="mb-4 flex items-center gap-3">
                     <span className="font-display text-4xl font-bold text-primary/20 leading-none">

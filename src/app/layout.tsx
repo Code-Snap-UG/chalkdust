@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Lora } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { deDE } from "@clerk/localizations";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
@@ -38,7 +39,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased`}
       >
-        <ClerkProvider>
+        <ClerkProvider localization={deDE}>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"

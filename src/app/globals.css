@@ -101,6 +101,10 @@
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
+@keyframes inkDrawV {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
 @keyframes inkFadeIn {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -119,6 +123,9 @@
   .ink-cursor { animation: none !important; }
   .ink-slipin { animation: none !important; opacity: 1 !important; transform: none !important; }
   .reveal     { opacity: 1 !important; transform: none !important; }
+  .auth-rule  { transform: scaleX(1) !important; animation: none !important; }
+  .auth-margin-line { transform: scaleY(1) !important; animation: none !important; }
+  .auth-anim  { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
 
 /* Scroll-reveal utilities — driven by IntersectionObserver via ScrollReveal component */
@@ -184,6 +191,451 @@
     font-family: var(--font-display, var(--font-sans));
   }
 }
+
+/* ─── Auth split-screen layout ────────────────────────────── */
+
+.auth-root {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Brand panel — hidden on small screens, shown at md+
+   Warm amber-parchment, like aged paper next to the fresh writing page */
+.auth-brand {
+  display: none;
+  position: relative;
+  width: 52%;
+  flex-shrink: 0;
+  background-color: oklch(0.948 0.028 82);
+  border-right: 1px solid oklch(0.875 0.02 88);
+  overflow: hidden;
+}
+@media (min-width: 860px) {
+  .auth-brand { display: flex; flex-direction: column; }
+}
+
+/* Ruled lines — dark ink, subtle, animate left→right */
+.auth-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: oklch(0.14 0.022 55 / 0.1);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: inkDraw 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Terracotta margin line — draws downward first */
+.auth-margin-line {
+  position: absolute;
+  left: 13%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: oklch(0.52 0.14 40);
+  transform: scaleY(0);
+  transform-origin: top center;
+  animation: inkDrawV 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+}
+
+/* Brand content — padding-left must always clear the margin line (13%).
+   Use percentage so it scales with panel width at all viewport sizes. */
+.auth-brand-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: clamp(3rem, 8vw, 5rem) clamp(3rem, 6vw, 4rem);
+  padding-left: 17%;
+}
+
+.auth-brand-label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: oklch(0.52 0.14 40);
+  margin-bottom: 1.75rem;
+  opacity: 0;
+  animation: inkFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1s forwards;
+}
+
+.auth-brand-tagline {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 3.8vw, 3.25rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.18;
+  color: oklch(0.14 0.022 55);
+  letter-spacing: -0.02em;
+  margin-bottom: 2.75rem;
+  opacity: 0;
+  animation: inkFadeIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 1.15s forwards;
+}
+
+/* "Klarheit" accent — terracotta, not italic */
+.auth-brand-tagline span {
+  font-style: normal;
+  color: oklch(0.52 0.14 40);
+}
+
+/* Teacher quote replaces marketing bullets —
+   a human moment, not a feature pitch */
+.auth-brand-quote {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.auth-brand-quote p {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: oklch(0.38 0.025 60);
+  margin-bottom: 0.75rem;
+  opacity: 0;
+  animation: inkFadeIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards;
+}
+
+.auth-brand-quote cite {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: 0.725rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(0.52 0.14 40 / 0.7);
+  display: block;
+  opacity: 0;
+  animation: inkFadeIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.55s forwards;
+}
+
+/* Right: form panel — top-weighted, not dead-center */
+.auth-form-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: oklch(0.975 0.018 88);
+  padding-top: clamp(4rem, 14vh, 9rem);
+  padding-bottom: clamp(3rem, 8vh, 6rem);
+  padding-left: clamp(1.5rem, 6vw, 3.5rem);
+  padding-right: clamp(1.5rem, 6vw, 3.5rem);
+}
+
+/* Wordmark shown on mobile when brand panel is hidden */
+.auth-mobile-wordmark {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: oklch(0.14 0.022 55);
+  letter-spacing: -0.02em;
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  animation: inkFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+@media (min-width: 860px) {
+  .auth-mobile-wordmark { display: none; }
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 400px;
+  opacity: 0;
+  animation: inkFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+}
+
+/* ─── Clerk component overrides ────────────────────────────── */
+
+/* Make Clerk's card transparent so our layout is the container */
+.cl-card {
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Align Clerk's root box and card to fill our container */
+.cl-rootBox,
+.cl-signIn-root,
+.cl-signUp-root {
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.cl-cardBox {
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.cl-form,
+.cl-formContainer {
+  overflow: visible !important;
+}
+
+/* Header — use Lora for the title */
+.cl-headerTitle {
+  font-family: var(--font-display) !important;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: oklch(0.14 0.022 55) !important;
+}
+
+.cl-headerSubtitle {
+  font-size: 0.875rem !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Identity preview & alternative methods — ensure readable on light background */
+.cl-identityPreview,
+.cl-identityPreview span,
+.cl-userPreview,
+.cl-userPreview span,
+.cl-alternativeMethodsBlockButton,
+.cl-alternativeMethodsBlockButton span,
+[class*="identityPreview"],
+[class*="identifier"],
+[class*="alternativeMethods"],
+[class*="strategy"] {
+  color: var(--foreground) !important;
+}
+
+/* Input wrapper — no conflicting border/shadow, allow focus ring to render (no clipping) */
+.cl-formFieldInputRow,
+.cl-formFieldInputWrapper,
+.cl-formField {
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* Space for focus ring (3px) — margin between fields, padding so ring isn't clipped by wrapper */
+.cl-formFieldInputRow {
+  margin-bottom: 0.5rem !important;
+  padding: 3px 0 !important;
+}
+
+/* Inputs — match design system (Input component) */
+.cl-formFieldInput {
+  min-height: 2.25rem !important;
+  width: 100% !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--input) !important;
+  background: transparent !important;
+  font-size: 0.875rem !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  outline: none !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px oklch(0.52 0.14 40 / 0.5) !important;
+}
+
+/* Error state — match app Input aria-invalid styling */
+.cl-formFieldInput[data-invalid="true"],
+.cl-formFieldInput[aria-invalid="true"] {
+  border-color: var(--destructive) !important;
+  box-shadow: 0 0 0 3px oklch(0.577 0.245 27.325 / 0.2) !important;
+}
+
+.cl-formFieldLabel {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Error message — ensure visible, hide broken icon if present */
+.cl-formFieldErrorText {
+  font-size: 0.75rem !important;
+  color: var(--destructive) !important;
+  margin-top: 0.25rem !important;
+}
+
+/* Hide broken Clerk error icon (external asset may fail to load) — error message + border suffice */
+.cl-formFieldError img,
+.cl-formFieldErrorMessage img,
+.cl-formFieldInput__trailing img,
+[class*="cl-formField"][class*="error"] img {
+  display: none !important;
+}
+
+/* Primary button — design tokens */
+.cl-formButtonPrimary {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  border: none !important;
+  transition: background-color 0.18s ease, transform 0.12s ease !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: oklch(0.46 0.14 40) !important;
+  transform: translateY(-1px) !important;
+}
+
+.cl-formButtonPrimary:active {
+  transform: translateY(0) !important;
+}
+
+/* Social auth buttons */
+.cl-socialButtonsBlockButton {
+  border: 1px solid var(--input) !important;
+  background: transparent !important;
+  color: var(--foreground) !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  border-color: oklch(0.52 0.14 40 / 0.4) !important;
+  background: oklch(0.52 0.14 40 / 0.04) !important;
+}
+
+/* Divider */
+.cl-dividerLine {
+  background: var(--border) !important;
+}
+
+.cl-dividerText {
+  color: var(--muted-foreground) !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Footer links */
+.cl-footerActionLink {
+  color: var(--primary) !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+}
+
+.cl-footerActionLink:hover {
+  text-decoration: underline !important;
+}
+
+.cl-footerActionText {
+  color: var(--muted-foreground) !important;
+}
+
+/* Footer container — remove any dark background (black box) */
+.cl-footer,
+.cl-footerActions,
+.cl-footerAction,
+.cl-footerRoot,
+.cl-badge,
+.cl-badgeContainer,
+[class*="cl-footer"],
+[class*="cl-badge"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Internal nav links */
+.cl-identityPreviewEditButton,
+.cl-formResendCodeLink {
+  color: var(--primary) !important;
+}
+
+/* OTP / verification code
+   input-otp renders a single real <input> stretched over the group,
+   and individual <div class="input-otp-slot"> elements as visual boxes.
+   We must NOT set color on the real input — doing so leaks the raw text
+   through each slot and causes doubled/overlapping characters. */
+
+/* Container — no border, layout only */
+.input-otp-group {
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: center !important;
+}
+
+/* Real overlay input (input-otp lib) — keep transparent so text doesn't bleed through slots */
+.input-otp-group > input {
+  color: transparent !important;
+  caret-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Visual slot divs (input-otp lib) */
+.input-otp-slot {
+  width: 2.5rem !important;
+  min-width: 2.5rem !important;
+  max-width: 2.5rem !important;
+  height: 2.25rem !important;
+  min-height: 2.25rem !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid var(--input) !important;
+  border-radius: var(--radius) !important;
+  background: transparent !important;
+  color: var(--foreground) !important;
+  font-size: 0.875rem !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.input-otp-slot[data-active="true"],
+.input-otp-slot[data-is-active="true"] {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px oklch(0.52 0.14 40 / 0.5) !important;
+}
+
+/* cl-otpCodeFieldInput is Clerk's actual <input> per digit — needs visible caret + text */
+.cl-otpCodeFieldInput {
+  width: 2.5rem !important;
+  min-width: 2.5rem !important;
+  max-width: 2.5rem !important;
+  height: 2.25rem !important;
+  min-height: 2.25rem !important;
+  flex-shrink: 0 !important;
+  padding: 0.25rem 0.375rem !important;
+  border: 1px solid var(--input) !important;
+  border-radius: var(--radius) !important;
+  background: transparent !important;
+  color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
+  font-size: 0.875rem !important;
+  text-align: center !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  outline: none !important;
+}
+
+.cl-otpCodeFieldInput:focus {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 3px oklch(0.52 0.14 40 / 0.5) !important;
+}
+
+/* ──────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse) {
   [data-slot="button"],
