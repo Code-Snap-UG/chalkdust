@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Pencil,
   Send,
+  Sparkles,
   X,
 } from "lucide-react";
 import {
@@ -68,8 +69,12 @@ export function LessonPlanDetailClient({
   initialPlan: PlanRecord;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [plan, setPlan] = useState<DisplayPlan>(() =>
     toDisplayPlan(initialPlan)
+  );
+  const [showGeneratedNotice, setShowGeneratedNotice] = useState(
+    searchParams.get("from") === "generate"
   );
   const [approving, setApproving] = useState(false);
   const [chatInput, setChatInput] = useState("");
@@ -304,6 +309,28 @@ export function LessonPlanDetailClient({
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left: Plan content */}
         <div className="flex flex-col gap-6">
+          {showGeneratedNotice && (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="size-4 text-primary" />
+                  <p>
+                    Plan erstellt. Du kannst ihn jetzt links manuell oder rechts
+                    mit ChAi verfeinern.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setShowGeneratedNotice(false)}
+                >
+                  Schließen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <ObjectivesSection
             objectives={plan.objectives}
             onSave={(updated) => handleBlockSave("objectives", updated)}
