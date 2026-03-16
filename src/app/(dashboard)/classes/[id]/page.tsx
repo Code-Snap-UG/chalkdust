@@ -270,7 +270,7 @@ export default async function ClassDetailPage({
       )}
 
       {/* Bausteine — only show when populated */}
-      {snippetFavorites.length > 0 && (
+      {/* {snippetFavorites.length > 0 && (
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -300,7 +300,7 @@ export default async function ClassDetailPage({
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Anstehende Stunden */}
       {plannedEntries.length > 0 && (
