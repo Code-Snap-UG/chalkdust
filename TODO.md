@@ -13,6 +13,6 @@ A running list of known improvements, cleanups, and tech debt to address.
 ## AI
 
 - [ ] **Reconsider max tool call steps per message (currently 5)** — evaluate whether 5 is the right limit for plan refinement. Too low and complex requests get cut off; too high and runaway chains become a risk. Tune based on real usage patterns.
-- [ ] **Add XML structure to `assembleContext()`** — replace the current `---` separated flat text blocks with named XML tags (`<lehrplan>`, `<unterrichtsreihe>`, `<klassenbuch>`, `<vorgaenger_klasse>`, `<lehrerangaben>`). Anthropic research shows this reduces misinterpretation on multi-document inputs and can improve structured generation quality. Low-risk, high-value change.
+- [x] **Add XML structure to `assembleContext()`** — replace the current `---` separated flat text blocks with named XML tags (`<lehrplan>`, `<unterrichtsreihe>`, `<klassenbuch>`, `<vorgaenger_klasse>`, `<lehrerangaben>`). Anthropic research shows this reduces misinterpretation on multi-document inputs and can improve structured generation quality. Low-risk, high-value change.
 
 ---

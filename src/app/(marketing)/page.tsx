@@ -8,10 +8,10 @@ import { ScrollReveal } from "@/components/marketing/scroll-reveal";
 const features = [
   {
     tag: "Planung",
-    heading: "Die KI kennt deinen Lehrplan.",
+    heading: "Chalkdust kennt deinen Lehrplan.",
     body: "Lade deinen Lehrplan einmal hoch — und Chalkdust weiß, was deine Klasse in diesem Jahr lernen muss. Jeder generierte Plan greift darauf zurück. Nie wieder generische Stunden, die am Curriculum vorbeigehen.",
     aside:
-      "Lehrplan-Themen, Kompetenzfelder, Schuljahrsstruktur — alles fließt in jeden einzelnen Plan ein.",
+      "Lehrplan-Themen, Kompetenzfelder, Schuljahresstruktur — alles fließt in jeden einzelnen Plan ein.",
     flipped: false,
   },
   {
@@ -19,13 +19,13 @@ const features = [
     heading: "Was wirklich passiert ist.",
     body: "Das Klassentagebuch ist das Herzstück. Jeder abgehaltene Plan wird zum Eintrag — ergänzt durch deine Notizen, Materialien und den tatsächlichen Unterrichtsverlauf. Je reicher das Tagebuch, desto präziser jeder nächste Plan.",
     aside:
-      "Die KI lernt: Welche Aktivitäten kamen gut an? Welche Themen brauchten mehr Zeit? Wohin entwickelt sich die Klasse?",
+      "Chalkdust lernt: Welche Aktivitäten kamen gut an? Welche Themen brauchten mehr Zeit? Wohin entwickelt sich die Klasse?",
     flipped: true,
   },
   {
     tag: "Reihenplanung",
     heading: "Vom Einzelnen zum Ganzen.",
-    body: "Plane nicht nur einzelne Stunden — plane Unterrichtsreihen. Definiere Meilensteine, verteile Stunden auf Lernziele, lass die KI die Einzelstunden vorschlagen. Ein kohärenter Bogen statt loser Einzelteile.",
+    body: "Plane nicht nur einzelne Stunden — plane Unterrichtsreihen. Definiere Meilensteine, verteile Stunden auf Lernziele, lass Chalkdust die Einzelstunden vorschlagen. Ein kohärenter Bogen statt loser Einzelteile.",
     aside:
       "Mehrere Stunden, ein roter Faden. Die Reihe kennt ihren Anfang und ihr Ende.",
     flipped: false,
