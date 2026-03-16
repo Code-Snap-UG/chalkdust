@@ -2,16 +2,9 @@
 
 import { useState, useTransition, Suspense } from "react";
 import useSWR from "swr";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -20,8 +13,8 @@ import {
   Loader2,
   Upload,
   Trash2,
-  GripVertical,
   PenLine,
+  Plus,
 } from "lucide-react";
 
 type ArchivedClass = {
@@ -38,13 +31,18 @@ type ExtractedTopic = {
   competencyArea: string;
 };
 
+const STEP_LABELS = [
+  "Klassendetails",
+  "Lehrplan",
+  "Themen",
+];
+
 function NewClassWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
 
-  // Step 1 data — initialised from URL search params when navigating from the archive flow
   const [name, setName] = useState(() => searchParams.get("name") ?? "");
   const [grade, setGrade] = useState(() => searchParams.get("grade") ?? "");
   const [subject, setSubject] = useState(() => searchParams.get("subject") ?? "");
@@ -56,7 +54,6 @@ function NewClassWizard() {
     (url: string) => fetch(url).then((r) => r.json())
   );
 
-  // Step 2 data
   const [curriculumMode, setCurriculumMode] = useState<"pdf" | "manual" | null>(null);
   const [fileName, setFileName] = useState("");
   const [topics, setTopics] = useState<ExtractedTopic[]>([]);
@@ -93,11 +90,7 @@ function NewClassWizard() {
     });
   }
 
-  function updateTopic(
-    index: number,
-    field: keyof ExtractedTopic,
-    value: string
-  ) {
+  function updateTopic(index: number, field: keyof ExtractedTopic, value: string) {
     setTopics((prev) =>
       prev.map((t, i) => (i === index ? { ...t, [field]: value } : t))
     );
@@ -118,16 +111,6 @@ function NewClassWizard() {
     setCurriculumMode("manual");
     setTopics([{ title: "", description: "", competencyArea: "" }]);
     setStep(3);
-  }
-
-  function moveTopic(index: number, direction: "up" | "down") {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= topics.length) return;
-    setTopics((prev) => {
-      const copy = [...prev];
-      [copy[index], copy[newIndex]] = [copy[newIndex], copy[index]];
-      return copy;
-    });
   }
 
   function handleFinish() {
@@ -164,279 +147,312 @@ function NewClassWizard() {
     });
   }
 
+  const stepThreeLabel = curriculumMode === "manual"
+    ? "Themen eingeben"
+    : "Themen prüfen";
+
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Neue Klasse anlegen
-        </h1>
-        <p className="text-muted-foreground">
-          Schritt {step} von 3 &ndash;{" "}
+    <div className="flex flex-col gap-6 max-w-2xl">
+      {/* Back link */}
+      {step === 1 ? (
+        <Link
+          href="/classes"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground w-fit"
+        >
+          <ArrowLeft className="size-3.5" />
+          Klassen
+        </Link>
+      ) : (
+        <button
+          onClick={() => setStep(step - 1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground w-fit"
+          disabled={isPending}
+        >
+          <ArrowLeft className="size-3.5" />
+          {STEP_LABELS[step - 2]}
+        </button>
+      )}
+
+      {/* Heading + step label */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Neue Klasse anlegen</h1>
+        <p className="mt-1 text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
+          Schritt {step} von 3 &middot;{" "}
           {step === 1
-            ? "Klassendetails"
+            ? STEP_LABELS[0]
             : step === 2
-              ? "Lehrplan hinzufügen"
-              : curriculumMode === "manual"
-                ? "Themen eingeben"
-                : "Themen überprüfen"}
+              ? STEP_LABELS[1]
+              : stepThreeLabel}
         </p>
       </div>
 
-      {/* Step indicators */}
-      <div className="mb-6 flex gap-2">
+      {/* Progress bars */}
+      <div className="flex gap-2">
         {[1, 2, 3].map((s) => (
           <div
             key={s}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
+            className={`h-1 flex-1 rounded-full transition-colors ${
               s <= step ? "bg-primary" : "bg-muted"
             }`}
           />
         ))}
       </div>
 
+      {/* ── Step 1: Klassendetails ── */}
       {step === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Klassendetails</CardTitle>
-            <CardDescription>
-              Diese Informationen helfen dem KI-Assistenten, passende
-              Unterrichtspläne zu erstellen.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Klassenname</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="z.B. 5a"
-                required
-              />
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="name"
+              className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground"
+            >
+              Klassenname
+            </label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="z.B. 5a"
+              className="h-11 text-base"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="grade"
+              className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground"
+            >
+              Jahrgangsstufe
+            </label>
+            <Input
+              id="grade"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              placeholder="z.B. 5"
+              className="h-11 text-base"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="subject"
+              className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground"
+            >
+              Fach
+            </label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="z.B. Mathematik"
+              className="h-11 text-base"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="schoolYear"
+              className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground"
+            >
+              Schuljahr
+            </label>
+            <Input
+              id="schoolYear"
+              value={schoolYear}
+              onChange={(e) => setSchoolYear(e.target.value)}
+              placeholder="z.B. 2025/2026"
+              className="h-11 text-base"
+            />
+          </div>
+
+          {archivedClasses.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="predecessorId"
+                className="text-[0.65rem] font-semibold tracking-[0.12em] uppercase text-muted-foreground"
+              >
+                Vorjahresklasse{" "}
+                <span className="normal-case font-normal tracking-normal text-muted-foreground/60">
+                  (optional)
+                </span>
+              </label>
+              <select
+                id="predecessorId"
+                value={predecessorId}
+                onChange={(e) => setPredecessorId(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Keine Verknüpfung</option>
+                {archivedClasses.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name} – {cls.subject}, Klasse {cls.grade} ({cls.schoolYear})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Die Übergangsdokumentation der Vorjahresklasse wird in die
+                KI-Unterrichtsplanung eingebunden.
+              </p>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="grade">Jahrgangsstufe</Label>
-              <Input
-                id="grade"
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                placeholder="z.B. 5"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="subject">Fach</Label>
-              <Input
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="z.B. Mathematik"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="schoolYear">Schuljahr</Label>
-              <Input
-                id="schoolYear"
-                value={schoolYear}
-                onChange={(e) => setSchoolYear(e.target.value)}
-                placeholder="z.B. 2025/2026"
-                required
-              />
-            </div>
-            {archivedClasses.length > 0 && (
-              <div className="grid gap-2">
-                <Label htmlFor="predecessorId">
-                  Vorjahresklasse verknüpfen{" "}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </Label>
-                <select
-                  id="predecessorId"
-                  value={predecessorId}
-                  onChange={(e) => setPredecessorId(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">Keine Verknüpfung</option>
-                  {archivedClasses.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name} – {cls.subject}, Klasse {cls.grade} (
-                      {cls.schoolYear})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Die Übergangsdokumentation der Vorjahresklasse wird in die
-                  KI-Unterrichtsplanung eingebunden.
-                </p>
-              </div>
-            )}
+          )}
+
+          <div className="mt-2">
             <Button
               onClick={() => setStep(2)}
               disabled={!name || !grade || !subject || !schoolYear}
-              className="mt-2"
+              size="lg"
             >
               Weiter
               <ArrowRight className="ml-2 size-4" />
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
+      {/* ── Step 2: Lehrplan ── */}
       {step === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Lehrplan hinzufügen</CardTitle>
-            <CardDescription>
-              Wie möchtest du den Lehrplan für diese Klasse hinterlegen?
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {isPending ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10">
-                <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">
-                  PDF wird analysiert und Themen werden extrahiert…
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {/* Option 1: PDF upload */}
-                <label className="group flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-muted/30">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors group-hover:border-primary/40 group-hover:text-primary">
-                    <Upload className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">PDF hochladen</p>
-                    <p className="text-xs text-muted-foreground">
-                      Die KI liest den Lehrplan und extrahiert automatisch Themen und Kompetenzbereiche. Max. 10 MB.
-                    </p>
-                  </div>
-                </label>
-
-                {/* Option 2: Manual entry */}
-                <button
-                  type="button"
-                  onClick={handleManualCreate}
-                  className="group flex items-start gap-4 rounded-lg border p-4 text-left transition-colors hover:border-primary/50 hover:bg-muted/30"
-                >
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors group-hover:border-primary/40 group-hover:text-primary">
-                    <PenLine className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Manuell erstellen</p>
-                    <p className="text-xs text-muted-foreground">
-                      Themen und Kompetenzbereiche direkt selbst eingeben — ohne PDF.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setStep(1)} disabled={isPending}>
-                <ArrowLeft className="mr-2 size-4" />
-                Zurück
-              </Button>
-              <Button variant="ghost" onClick={() => handleFinish()} disabled={isPending} className="text-muted-foreground">
-                Ohne Lehrplan fortfahren
-              </Button>
+        <div className="flex flex-col gap-5">
+          {isPending ? (
+            <div className="flex items-center gap-3 border-l-2 border-primary/40 pl-3 py-2">
+              <Loader2 className="size-4 animate-spin text-primary shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                PDF wird analysiert — Themen werden extrahiert…
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-x-8 border-t sm:grid-cols-2">
+              {/* Option 1: PDF upload */}
+              <label className="group -mx-1 flex cursor-pointer flex-col gap-1 rounded-sm border-b px-1 py-5 transition-colors hover:bg-muted/40">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+                <p className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
+                  PDF hochladen
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Die KI liest den Lehrplan und extrahiert automatisch Themen und
+                  Kompetenzbereiche. Max. 10 MB.
+                </p>
+                <p className="mt-1.5 flex items-center gap-1 text-[0.65rem] font-semibold tracking-[0.1em] uppercase text-muted-foreground/50">
+                  <Upload className="size-3" />
+                  .pdf
+                </p>
+              </label>
+
+              {/* Option 2: Manual entry */}
+              <button
+                type="button"
+                onClick={handleManualCreate}
+                className="group -mx-1 flex flex-col gap-1 rounded-sm border-b px-1 py-5 text-left transition-colors hover:bg-muted/40"
+              >
+                <p className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
+                  Manuell erstellen
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Themen und Kompetenzbereiche direkt selbst eingeben — ohne PDF.
+                </p>
+                <p className="mt-1.5 flex items-center gap-1 text-[0.65rem] font-semibold tracking-[0.1em] uppercase text-muted-foreground/50">
+                  <PenLine className="size-3" />
+                  Freitext
+                </p>
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleFinish()}
+              disabled={isPending}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+            >
+              Ohne Lehrplan fortfahren →
+            </button>
+          </div>
+        </div>
       )}
 
+      {/* ── Step 3: Themen ── */}
       {step === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {curriculumMode === "manual" ? "Lehrplan manuell anlegen" : "Extrahierte Themen überprüfen"}
-            </CardTitle>
-            <CardDescription>
-              {curriculumMode === "manual"
-                ? "Füge die Themen und Kompetenzbereiche deines Lehrplans ein. Du kannst jederzeit weitere ergänzen."
-                : `Die KI hat ${topics.length} Themen aus dem Lehrplan extrahiert. Du kannst sie bearbeiten, umsortieren oder ergänzen.`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            {curriculumMode === "manual"
+              ? "Füge die Themen deines Lehrplans ein. Du kannst jederzeit weitere ergänzen."
+              : `Die KI hat ${topics.length} ${topics.length === 1 ? "Thema" : "Themen"} extrahiert. Prüfe und ergänze nach Bedarf.`}
+          </p>
+
+          <div className="border-t">
             {topics.map((topic, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2 rounded-lg border p-3"
+                className="flex items-start gap-3 border-b py-4"
               >
-                <div className="flex flex-col gap-1 pt-1">
-                  <button
-                    onClick={() => moveTopic(i, "up")}
-                    disabled={i === 0}
-                    className="text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  >
-                    <GripVertical className="size-4" />
-                  </button>
-                </div>
-                <div className="flex-1 space-y-2">
+                {/* Index */}
+                <span className="mt-2 w-6 shrink-0 font-display text-sm font-bold tabular-nums text-muted-foreground/30">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+
+                {/* Fields */}
+                <div className="flex-1 flex flex-col gap-1.5">
                   <Input
                     value={topic.title}
                     onChange={(e) => updateTopic(i, "title", e.target.value)}
                     placeholder="Thema"
-                    className="font-medium"
+                    className="h-9 font-medium"
                   />
                   <Input
                     value={topic.description}
-                    onChange={(e) =>
-                      updateTopic(i, "description", e.target.value)
-                    }
+                    onChange={(e) => updateTopic(i, "description", e.target.value)}
                     placeholder="Beschreibung (optional)"
-                    className="text-sm"
+                    className="h-8 text-sm"
                   />
                   <Input
                     value={topic.competencyArea}
-                    onChange={(e) =>
-                      updateTopic(i, "competencyArea", e.target.value)
-                    }
+                    onChange={(e) => updateTopic(i, "competencyArea", e.target.value)}
                     placeholder="Kompetenzbereich (optional)"
-                    className="text-xs"
+                    className="h-8 text-sm"
                   />
                 </div>
+
+                {/* Remove */}
                 <button
                   onClick={() => removeTopic(i)}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="mt-2 shrink-0 text-muted-foreground/40 transition-colors hover:text-destructive"
+                  title="Thema entfernen"
                 >
                   <Trash2 className="size-4" />
                 </button>
               </div>
             ))}
+          </div>
 
-            <Button variant="outline" onClick={addTopic} className="w-full">
-              + Thema hinzufügen
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={addTopic}
+            className="self-start text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="mr-1.5 size-4" />
+            Thema hinzufügen
+          </Button>
+
+          <div className="mt-2">
+            <Button
+              onClick={handleFinish}
+              disabled={isPending}
+              size="lg"
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Check className="mr-2 size-4" />
+              )}
+              Klasse erstellen
             </Button>
-
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                <ArrowLeft className="mr-2 size-4" />
-                Zurück
-              </Button>
-              <Button
-                onClick={handleFinish}
-                disabled={isPending}
-                className="flex-1"
-              >
-                {isPending ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                  <Check className="mr-2 size-4" />
-                )}
-                Klasse erstellen
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

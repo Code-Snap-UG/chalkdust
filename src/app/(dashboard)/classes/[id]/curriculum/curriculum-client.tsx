@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateCurriculumTopics } from "@/lib/actions/curriculum";
 import {
-  BookOpen,
   Check,
   GripVertical,
   Loader2,
@@ -210,7 +209,7 @@ export function CurriculumClient({ classGroupId, curriculum, topics }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Lehrplan</h1>
-          {curriculum && (
+          {curriculum && topics.length > 0 && (
             <p className="text-sm text-muted-foreground">
               {curriculum.sourceFileName
                 ? `${curriculum.sourceFileName} · `
@@ -219,7 +218,7 @@ export function CurriculumClient({ classGroupId, curriculum, topics }: Props) {
             </p>
           )}
         </div>
-        {curriculum && (
+        {curriculum && topics.length > 0 && (
           <Button variant="outline" size="sm" onClick={enterEditMode}>
             <Pencil className="mr-1.5 size-3.5" />
             Bearbeiten
@@ -228,18 +227,65 @@ export function CurriculumClient({ classGroupId, curriculum, topics }: Props) {
       </div>
 
       {!curriculum ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-          <BookOpen className="size-8 text-muted-foreground" />
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Kein Lehrplan hinterlegt</h2>
-            <p className="text-sm text-muted-foreground">
-              Für diese Klasse wurde noch kein Lehrplan angelegt.
+        <div className="py-4 sm:py-8">
+          <div className="max-w-lg">
+            <span className="font-display text-6xl font-bold leading-none text-primary/10 sm:text-8xl">
+              0
+            </span>
+            <h2 className="mt-4 text-xl font-bold sm:text-2xl">
+              Noch kein Lehrplan hinterlegt.
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Der Lehrplan ist das Fundament deiner Planung. Sobald du ihn
+              angelegt hast, richtet die KI alle Unterrichtsreihen und Pläne
+              automatisch daran aus.
             </p>
+            <div className="mt-8">
+              <Button onClick={enterEditMode} className="w-full sm:w-auto">
+                <PenLine className="size-4" />
+                Lehrplan anlegen
+              </Button>
+            </div>
+
+            <div className="mt-10 border-t pt-8">
+              <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                So funktioniert es
+              </p>
+              <div className="flex flex-col gap-4">
+                {(
+                  [
+                    {
+                      n: "1",
+                      title: "Themen eintragen",
+                      desc: "Trag die Themen deines Lehrplans ein — Titel, Beschreibung und Kompetenzbereich.",
+                    },
+                    {
+                      n: "2",
+                      title: "KI richtet sich aus",
+                      desc: "Bei jeder neuen Unterrichtsreihe berücksichtigt die KI automatisch deinen Lehrplan.",
+                    },
+                    {
+                      n: "3",
+                      title: "Jederzeit anpassbar",
+                      desc: "Du kannst Themen jederzeit ergänzen, umsortieren oder entfernen.",
+                    },
+                  ] as const
+                ).map((item) => (
+                  <div key={item.n} className="flex items-start gap-4">
+                    <span className="w-6 shrink-0 font-display text-2xl font-bold leading-none text-primary/30">
+                      {item.n}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <Button onClick={enterEditMode} variant="outline">
-            <PenLine className="mr-2 size-4" />
-            Lehrplan manuell anlegen
-          </Button>
         </div>
       ) : (
         <>
@@ -310,14 +356,65 @@ export function CurriculumClient({ classGroupId, curriculum, topics }: Props) {
           )}
 
           {topics.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/20 p-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                Noch keine Themen hinterlegt.
-              </p>
-              <Button variant="outline" size="sm" onClick={enterEditMode}>
-                <PenLine className="mr-1.5 size-3.5" />
-                Themen hinzufügen
-              </Button>
+            <div className="py-4 sm:py-8">
+              <div className="max-w-lg">
+                <span className="font-display text-6xl font-bold leading-none text-primary/10 sm:text-8xl">
+                  0
+                </span>
+                <h2 className="mt-4 text-xl font-bold sm:text-2xl">
+                  Noch keine Themen hinterlegt.
+                </h2>
+                <p className="mt-3 leading-relaxed text-muted-foreground">
+                  Der Lehrplan ist das Fundament deiner Planung. Sobald du ihn
+                  angelegt hast, richtet die KI alle Unterrichtsreihen und Pläne
+                  automatisch daran aus.
+                </p>
+                <div className="mt-8">
+                  <Button onClick={enterEditMode} className="w-full sm:w-auto">
+                    <PenLine className="size-4" />
+                    Lehrplan anlegen
+                  </Button>
+                </div>
+
+                <div className="mt-10 border-t pt-8">
+                  <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                    So funktioniert es
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {(
+                      [
+                        {
+                          n: "1",
+                          title: "Themen eintragen",
+                          desc: "Trag die Themen deines Lehrplans ein — Titel, Beschreibung und Kompetenzbereich.",
+                        },
+                        {
+                          n: "2",
+                          title: "KI richtet sich aus",
+                          desc: "Bei jeder neuen Unterrichtsreihe berücksichtigt die KI automatisch deinen Lehrplan.",
+                        },
+                        {
+                          n: "3",
+                          title: "Jederzeit anpassbar",
+                          desc: "Du kannst Themen jederzeit ergänzen, umsortieren oder entfernen.",
+                        },
+                      ] as const
+                    ).map((item) => (
+                      <div key={item.n} className="flex items-start gap-4">
+                        <span className="w-6 shrink-0 font-display text-2xl font-bold leading-none text-primary/30">
+                          {item.n}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold">{item.title}</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </>

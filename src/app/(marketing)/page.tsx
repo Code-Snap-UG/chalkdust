@@ -1,49 +1,66 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { ScrollReveal } from "@/components/marketing/scroll-reveal";
+
+// ─── Data ────────────────────────────────────────────────────────────────────
 
 const features = [
   {
-    title: "KI-gestützte Planung",
-    description:
-      "Erstelle vollständige Unterrichtspläne in Sekunden. Die KI kennt Lehrpläne und passt sich deinem Unterrichtsstil an.",
-    featured: true,
+    tag: "Planung",
+    heading: "Die KI kennt deinen Lehrplan.",
+    body: "Lade deinen Lehrplan einmal hoch — und Chalkdust weiß, was deine Klasse in diesem Jahr lernen muss. Jeder generierte Plan greift darauf zurück. Nie wieder generische Stunden, die am Curriculum vorbeigehen.",
+    aside:
+      "Lehrplan-Themen, Kompetenzfelder, Schuljahrsstruktur — alles fließt in jeden einzelnen Plan ein.",
+    flipped: false,
   },
   {
-    title: "Übersichtliches Dashboard",
-    description:
-      "Behalte das gesamte Schuljahr im Blick. Verfolge Fortschritte und bevorstehende Stunden.",
+    tag: "Gedächtnis",
+    heading: "Was wirklich passiert ist.",
+    body: "Das Klassentagebuch ist das Herzstück. Jeder abgehaltene Plan wird zum Eintrag — ergänzt durch deine Notizen, Materialien und den tatsächlichen Unterrichtsverlauf. Je reicher das Tagebuch, desto präziser jeder nächste Plan.",
+    aside:
+      "Die KI lernt: Welche Aktivitäten kamen gut an? Welche Themen brauchten mehr Zeit? Wohin entwickelt sich die Klasse?",
+    flipped: true,
   },
   {
-    title: "Visueller Kalender",
-    description:
-      "Plane und visualisiere deinen Unterricht für das gesamte Semester. Verschiebe Stunden per Drag-and-Drop.",
+    tag: "Reihenplanung",
+    heading: "Vom Einzelnen zum Ganzen.",
+    body: "Plane nicht nur einzelne Stunden — plane Unterrichtsreihen. Definiere Meilensteine, verteile Stunden auf Lernziele, lass die KI die Einzelstunden vorschlagen. Ein kohärenter Bogen statt loser Einzelteile.",
+    aside:
+      "Mehrere Stunden, ein roter Faden. Die Reihe kennt ihren Anfang und ihr Ende.",
+    flipped: false,
   },
   {
-    title: "Unterrichtsbibliothek",
-    description:
-      "Baue eine persönliche Bibliothek wiederverwendbarer Pläne auf. Sortiert nach Fach, Klasse und Thema.",
+    tag: "Bausteine",
+    heading: "Guter Unterricht verschwindet nicht.",
+    body: "Die Einstiegsaufgabe, die jeder Klasse gelingt. Das Gruppenformat, das immer zieht. Die Erklärung, die sitzt. Speichere solche Momente als Bausteine — und rufe sie in jedem neuen Plan wieder ab.",
+    aside:
+      "Dein persönliches Repertoire wächst mit jedem Schuljahr. Das Beste geht nie verloren.",
+    flipped: true,
   },
 ];
 
 const testimonials = [
   {
     quote:
-      "Chalkdust hat meine Unterrichtsvorbereitung komplett verändert. Was mich früher Stunden gekostet hat, dauert jetzt 20 Minuten.",
+      "Chalkdust hat meine Unterrichtsvorbereitung komplett verändert. Was mich früher Stunden gekostet hat, dauert jetzt 20 Minuten — und der Plan ist besser, weil er meine Klasse wirklich kennt.",
     name: "Sarah K.",
     role: "Biologielehrerin, Gymnasium",
+    featured: true,
   },
   {
     quote:
       "Der KI-Assistent ist wie eine Kollegin, die immer verfügbar ist. Er schlägt Aktivitäten vor, auf die ich selbst nie gekommen wäre.",
     name: "Marcus T.",
     role: "Geschichtslehrer, Realschule",
+    featured: false,
   },
   {
     quote:
       "Endlich ein Tool, das speziell für Lehrkräfte entwickelt wurde. Es kennt die Lehrpläne und spart mir so viel Zeit.",
     name: "Priya R.",
     role: "Mathematiklehrerin, Grundschule",
+    featured: false,
   },
 ];
 
@@ -52,11 +69,11 @@ const plans = [
     name: "Kostenlos",
     price: "0 €",
     period: "für immer",
-    description: "Perfekt zum Einstieg",
+    description: "Zum Kennenlernen",
     features: [
       "5 Unterrichtspläne pro Monat",
       "KI-Assistent (10 Nachrichten/Monat)",
-      "Einfache Kalenderansicht",
+      "Klassentagebuch",
       "E-Mail-Support",
     ],
     cta: "Kostenlos starten",
@@ -70,10 +87,10 @@ const plans = [
     features: [
       "Unbegrenzte Unterrichtspläne",
       "Unbegrenzter KI-Assistent",
-      "Vollständiger Kalender & Planung",
-      "Unterrichtsbibliothek & Vorlagen",
+      "Reihenplanung & Bausteine",
+      "Lehrplan-Upload & Analyse",
+      "Schuljahres-Übergabe",
       "Prioritäts-Support",
-      "Export als PDF & Google Docs",
     ],
     cta: "Gratis testen",
     highlighted: true,
@@ -96,76 +113,103 @@ const plans = [
   },
 ];
 
-const steps = [
+const loopSteps = [
   {
-    step: "1",
-    title: "Sag uns, was du brauchst",
+    label: "Planen",
     description:
-      "Gib Fach, Klassenstufe, Thema und Dauer ein. Die KI übernimmt den Rest.",
+      "Mit KI-Unterstützung, Lehrplan-Kontext und allem, was du über diese Klasse weißt.",
   },
   {
-    step: "2",
-    title: "KI erstellt deinen Plan",
-    description:
-      "Erhalte in Sekunden einen vollständigen Unterrichtsplan mit Zielen, Aktivitäten und Bewertung.",
+    label: "Unterrichten",
+    description: "Der Plan ist dein Ausgangspunkt — du entscheidest, was daraus wird.",
   },
   {
-    step: "3",
-    title: "Anpassen & einplanen",
+    label: "Reflektieren",
     description:
-      "Passe ihn nach Belieben an, trage ihn in deinen Kalender ein — und du bist bereit.",
+      "Was hat funktioniert? Was nicht? Das Tagebuch hält fest, was wirklich passiert ist.",
+  },
+  {
+    label: "Wiederverwenden",
+    description:
+      "Bausteine, Reihen, Pläne. Das Beste bleibt erhalten und wird besser.",
   },
 ];
 
-export default function LandingPage() {
-  const [featuredFeature, ...otherFeatures] = features;
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
+export default function LandingPage() {
   return (
     <>
-      {/* Hero — asymmetric, left-aligned, editorial */}
-      <section className="px-4 pb-16 pt-20 sm:px-6 sm:pt-28">
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden px-4 pb-20 pt-24 sm:px-6 sm:pt-32 lg:pt-36">
         <div className="mx-auto max-w-6xl">
-          <div className="grid items-end gap-12 lg:grid-cols-[3fr_2fr]">
+          <div className="grid items-end gap-16 lg:grid-cols-[3fr_2fr]">
+            {/* Left — headline */}
             <div>
-              <p className="mb-6 text-sm font-medium uppercase tracking-widest text-primary">
+              <p
+                className="ink-stage mb-7 text-xs font-semibold uppercase tracking-[0.2em] text-primary"
+                style={{ animation: "inkFadeIn 0.6s cubic-bezier(0.22,1,0.36,1) 0.05s both" }}
+              >
                 KI-gestützte Unterrichtsplanung
               </p>
-              <h1 className="text-5xl font-bold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+              <h1
+                className="ink-stage font-display text-[clamp(3.2rem,8vw,6rem)] font-bold leading-[0.92] tracking-tight"
+                style={{ animation: "inkFadeIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both" }}
+              >
                 Besserer
                 <br />
                 Unterricht.
                 <br />
                 <em className="text-primary not-italic">Mehr Zeit.</em>
               </h1>
-              <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
-                Chalkdust hilft Lehrkräften, mit der Kraft der KI
-                herausragenden Unterricht zu planen — damit du weniger Zeit mit
-                Vorbereitung und mehr Zeit mit dem Unterrichten verbringst.
+
+              {/* Ink draw line under headline */}
+              <div
+                className="ink-line mt-5 h-[2px] w-24 origin-left bg-primary"
+                style={{ animation: "inkDraw 0.8s cubic-bezier(0.22,1,0.36,1) 0.6s both" }}
+              />
+
+              <p
+                className="ink-stage mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground"
+                style={{ animation: "inkFadeIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.45s both" }}
+              >
+                Chalkdust ist der KI-Co-Pilot, den jede Lehrkraft verdient. Kein
+                Chatbot, kein Template-Generator — ein Planungspartner, der deine
+                Klassen kennt, sich an sie erinnert und mit der Zeit besser wird.
               </p>
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+
+              <div
+                className="ink-stage mt-10 flex flex-col gap-3 sm:flex-row sm:items-center"
+                style={{ animation: "inkFadeIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.6s both" }}
+              >
                 <Button size="lg" className="h-12 px-8 text-base" asChild>
                   <Link href="/dashboard">Jetzt kostenlos starten</Link>
                 </Button>
                 <Link
-                  href="#funktionen"
+                  href="#die-idee"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Mehr erfahren →
                 </Link>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Keine Kreditkarte erforderlich · Kostenloser Plan verfügbar
+              <p
+                className="ink-stage mt-4 text-xs text-muted-foreground"
+                style={{ animation: "inkFadeIn 0.6s cubic-bezier(0.22,1,0.36,1) 0.75s both" }}
+              >
+                Keine Kreditkarte · Kostenloser Plan verfügbar
               </p>
             </div>
 
-            {/* Pull quote — teacher voice, right column */}
-            <div className="hidden lg:flex flex-col justify-end pb-4">
-              <blockquote className="border-l-2 border-primary pl-5">
-                <p className="font-display text-xl italic leading-relaxed text-foreground/75">
-                  &bdquo;Was mich früher Stunden gekostet hat, dauert jetzt 20
-                  Minuten.&ldquo;
+            {/* Right — pull quote */}
+            <div
+              className="ink-stage hidden flex-col justify-end pb-6 lg:flex"
+              style={{ animation: "inkFadeIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.55s both" }}
+            >
+              <blockquote className="border-l-2 border-primary pl-6">
+                <p className="font-display text-[1.35rem] italic leading-relaxed text-foreground/70">
+                  &bdquo;Was mich früher Stunden gekostet hat, dauert jetzt 20&nbsp;Minuten — und der Plan ist besser.&ldquo;
                 </p>
-                <footer className="mt-3 text-sm text-muted-foreground">
+                <footer className="mt-4 text-sm text-muted-foreground">
                   — Sarah K., Biologielehrerin
                 </footer>
               </blockquote>
@@ -174,117 +218,202 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features — asymmetric: one large featured, three stacked */}
-      <section id="funktionen" className="border-t px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Alles, was Lehrkräfte brauchen
-            </h2>
-            <p className="mt-3 max-w-xl text-muted-foreground">
-              Von Grund auf für den modernen Unterricht entwickelt.
+      {/* ── The Scene — Empathy ──────────────────────────────────────────── */}
+      <section id="die-idee" className="border-t px-4 py-24 sm:px-6 lg:py-32">
+        <div className="mx-auto max-w-4xl">
+          <ScrollReveal>
+            <p className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Der Alltag
             </p>
-          </div>
+          </ScrollReveal>
+          <ScrollReveal delay={1} slow>
+            <p className="font-display text-[clamp(1.6rem,3.5vw,2.4rem)] italic leading-[1.35] text-foreground/80">
+              Sonntag, 21 Uhr. Die Woche beginnt morgen. Du öffnest ein leeres
+              Dokument und weißt nicht genau, wo du anfangen sollst — obwohl du
+              diese Klasse in- und auswendig kennst. Obwohl du weißt, was sie
+              braucht. Das Problem ist nicht das Wissen.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={2} slow>
+            <p className="mt-8 font-display text-[clamp(1.6rem,3.5vw,2.4rem)] italic leading-[1.35] text-foreground/80">
+              Das Problem ist die Zeit, dieses Wissen in einen Plan zu verwandeln.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={3}>
+            <p className="mt-10 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Chalkdust nimmt dein akkumuliertes Wissen — den Lehrplan, das
+              Tagebuch, deine Klasse — und gibt dir in Minuten zurück, wofür du
+              früher Stunden gebraucht hast.
+            </p>
+          </ScrollReveal>
+        </div>
+      </section>
 
-          <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
-            {/* Featured large item */}
-            <div className="flex flex-col gap-4 rounded-sm bg-muted/50 p-8 sm:p-10">
-              <p className="text-xs font-medium uppercase tracking-widest text-primary">
-                Kernfunktion
-              </p>
-              <h3 className="text-3xl font-bold sm:text-4xl">
-                {featuredFeature?.title}
-              </h3>
-              <p className="max-w-md text-muted-foreground leading-relaxed">
-                {featuredFeature?.description}
-              </p>
-              <div className="mt-2">
-                <Button asChild>
-                  <Link href="/dashboard">Jetzt ausprobieren</Link>
-                </Button>
-              </div>
-            </div>
+      {/* ── The Loop — Philosophy ────────────────────────────────────────── */}
+      <section className="border-t bg-muted/40 px-4 py-24 sm:px-6 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <ScrollReveal>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Die Idee
+            </p>
+            <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight tracking-tight">
+              Ein System, das mit dir wächst.
+            </h2>
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
+              Chalkdust ist kein einmaliges Werkzeug. Es ist ein Kreislauf — und
+              jede Runde durch diesen Kreislauf macht die nächste besser.
+            </p>
+          </ScrollReveal>
 
-            {/* Stack of smaller feature items */}
-            <div className="flex flex-col divide-y rounded-sm border">
-              {otherFeatures.map((feature) => (
-                <div key={feature.title} className="flex flex-col gap-1.5 p-5">
-                  <h3 className="font-bold">{feature.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
+          {/* Loop steps */}
+          <div className="mt-16 grid gap-0 sm:grid-cols-4">
+            {loopSteps.map((step, i) => (
+              <ScrollReveal key={step.label} delay={(i % 4) as 0 | 1 | 2 | 3 | 4} className="relative">
+                {/* Connector line between steps */}
+                {i < loopSteps.length - 1 && (
+                  <div className="absolute right-0 top-6 hidden h-px w-full translate-x-1/2 bg-border sm:block" />
+                )}
+                <div className="relative pr-8">
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="font-display text-4xl font-bold text-primary/20 leading-none">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl font-bold">{step.label}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {step.description}
                   </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works — editorial large numbers, no circles */}
-      <section id="so-funktionierts" className="border-t bg-muted/30 px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Vom leeren Blatt zum
-              <br />
-              Unterrichtsplan in Minuten
-            </h2>
-          </div>
-          <div className="grid gap-10 sm:grid-cols-3">
-            {steps.map((step) => (
-              <div key={step.step}>
-                <span className="font-display text-7xl font-bold leading-none text-primary/20">
-                  {step.step}
-                </span>
-                <h3 className="mt-3 text-lg font-bold">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {step.description}
-                </p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="border-t px-4 py-20 sm:px-6">
+      {/* ── Features — Editorial Deep Dives ──────────────────────────────── */}
+      <section id="funktionen" className="border-t px-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Geliebt von Lehrkräften
+          <ScrollReveal className="pb-16 pt-24 lg:pt-32">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Funktionen
+            </p>
+            <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight tracking-tight">
+              Alles, was Lehrkräfte wirklich brauchen.
             </h2>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {testimonials.map((t) => (
-              <div key={t.name} className="flex flex-col gap-4 border-t-2 border-primary/20 pt-5">
-                <p className="font-display text-lg italic leading-relaxed text-foreground/80">
-                  &bdquo;{t.quote}&ldquo;
-                </p>
-                <div>
-                  <p className="text-sm font-semibold">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.role}</p>
+          </ScrollReveal>
+
+          {features.map((feature, i) => (
+            <div
+              key={feature.tag}
+              className="border-t py-20 lg:py-28"
+            >
+              <ScrollReveal
+                className={`grid items-start gap-12 lg:grid-cols-[3fr_2fr] ${
+                  feature.flipped ? "lg:[direction:rtl]" : ""
+                }`}
+              >
+                {/* Main content */}
+                <div className={feature.flipped ? "lg:[direction:ltr]" : ""}>
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                    {feature.tag}
+                  </p>
+                  <h3 className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold leading-tight tracking-tight">
+                    {feature.heading}
+                  </h3>
+                  <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+                    {feature.body}
+                  </p>
+                  <div className="mt-8">
+                    <Button variant="outline" asChild>
+                      <Link href="/dashboard">Ausprobieren →</Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
+
+                {/* Aside — pull detail */}
+                <div
+                  className={`flex flex-col justify-center ${feature.flipped ? "lg:[direction:ltr]" : ""}`}
+                >
+                  <div className="border-l-2 border-primary/30 pl-6">
+                    <p className="font-display text-lg italic leading-relaxed text-foreground/60">
+                      {feature.aside}
+                    </p>
+                  </div>
+                  {/* Decorative step number */}
+                  <p className="mt-6 font-display text-[5rem] font-bold leading-none text-primary/8 select-none">
+                    {String(i + 1).padStart(2, "0")}
+                  </p>
+                </div>
+              </ScrollReveal>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Testimonials ─────────────────────────────────────────────────── */}
+      <section className="border-t bg-muted/40 px-4 py-24 sm:px-6 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <ScrollReveal>
+            <p className="mb-12 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Stimmen aus der Praxis
+            </p>
+          </ScrollReveal>
+
+          {/* Featured testimonial */}
+          <ScrollReveal slow>
+            <blockquote className="border-l-2 border-primary pl-8 lg:pl-12">
+              <p className="font-display text-[clamp(1.5rem,3vw,2.2rem)] italic leading-[1.4] text-foreground/85">
+                &bdquo;{testimonials[0]?.quote}&ldquo;
+              </p>
+              <footer className="mt-6 flex items-center gap-3">
+                <div className="h-px w-8 bg-primary/40" />
+                <div>
+                  <p className="text-sm font-semibold">{testimonials[0]?.name}</p>
+                  <p className="text-xs text-muted-foreground">{testimonials[0]?.role}</p>
+                </div>
+              </footer>
+            </blockquote>
+          </ScrollReveal>
+
+          {/* Supporting testimonials */}
+          <div className="mt-16 grid gap-10 sm:grid-cols-2">
+            {testimonials.slice(1).map((t, i) => (
+              <ScrollReveal key={t.name} delay={(i + 1) as 0 | 1 | 2 | 3 | 4}>
+                <div className="border-t-2 border-primary/20 pt-6">
+                  <p className="font-display text-lg italic leading-relaxed text-foreground/75">
+                    &bdquo;{t.quote}&ldquo;
+                  </p>
+                  <footer className="mt-5">
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.role}</p>
+                  </footer>
+                </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="preise" className="border-t bg-muted/30 px-4 py-20 sm:px-6">
+      {/* ── Pricing ──────────────────────────────────────────────────────── */}
+      <section id="preise" className="border-t px-4 py-24 sm:px-6 lg:py-32">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Einfache, transparente Preise
+          <ScrollReveal>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Preise
+            </p>
+            <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight tracking-tight">
+              Einfach. Transparent.
             </h2>
-            <p className="mt-3 text-muted-foreground">
+            <p className="mt-3 max-w-md text-base text-muted-foreground">
               Starte kostenlos, upgrade wenn du bereit bist.
             </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {plans.map((plan) => (
-              <div
+          </ScrollReveal>
+
+          <div className="mt-14 grid gap-4 sm:grid-cols-3">
+            {plans.map((plan, i) => (
+              <ScrollReveal
                 key={plan.name}
+                delay={(i) as 0 | 1 | 2 | 3 | 4}
                 className={`relative flex flex-col gap-5 rounded-sm border p-6 ${
                   plan.highlighted
                     ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -314,9 +443,9 @@ export default function LandingPage() {
                     {plan.description}
                   </p>
                 </div>
-                <ul className="flex-1 space-y-2 border-t pt-4">
+                <ul className="flex-1 space-y-2.5 border-t pt-5">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
+                    <li key={f} className="flex items-start gap-2.5 text-sm">
                       <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
                       {f}
                     </li>
@@ -329,31 +458,46 @@ export default function LandingPage() {
                 >
                   <Link href="/dashboard">{plan.cta}</Link>
                 </Button>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-end gap-8 lg:grid-cols-[2fr_1fr]">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Bereit, deine Planung
-                <br />
-                zu transformieren?
-              </h2>
-              <p className="mt-4 max-w-lg text-muted-foreground leading-relaxed">
-                Schließe dich tausenden Lehrkräften an, die mit Chalkdust jede
-                Woche Stunden sparen.
-              </p>
-              <Button size="lg" className="mt-8 h-12 px-10 text-base" asChild>
+      {/* ── Final CTA ────────────────────────────────────────────────────── */}
+      <section className="border-t px-4 py-24 sm:px-6 lg:py-36">
+        <div className="mx-auto max-w-4xl">
+          <ScrollReveal slow>
+            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Bereit?
+            </p>
+            <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] font-bold leading-[1.05] tracking-tight">
+              Dein Wissen verdient
+              <br />
+              ein besseres Werkzeug.
+            </h2>
+
+            {/* Ink underline */}
+            <div
+              className="ink-line mt-5 h-[2px] w-16 origin-left bg-primary"
+              style={{ animation: "inkDraw 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both" }}
+            />
+          </ScrollReveal>
+
+          <ScrollReveal delay={1}>
+            <p className="mt-8 max-w-md text-base leading-relaxed text-muted-foreground">
+              Schließe dich Lehrkräften an, die jede Woche Stunden sparen — und
+              dabei besser vorbereitet in den Unterricht gehen als je zuvor.
+            </p>
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <Button size="lg" className="h-12 px-10 text-base" asChild>
                 <Link href="/dashboard">Jetzt kostenlos starten</Link>
               </Button>
+              <p className="text-xs text-muted-foreground">
+                Keine Kreditkarte · Kostenloser Plan verfügbar
+              </p>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
     </>

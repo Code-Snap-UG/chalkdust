@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
-  FileText,
   ChevronDown,
   ChevronUp,
   Save,
+  Sparkles,
   Upload,
   Loader2,
   Paperclip,
@@ -152,12 +153,69 @@ export default function DiaryPage() {
       </div>
 
       {entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-          <FileText className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Noch keine Tagebucheinträge. Erstelle und gib einen Unterrichtsplan
-            frei, um automatisch einen Eintrag zu erzeugen.
-          </p>
+        <div className="py-4 sm:py-8">
+          <div className="max-w-lg">
+            <span className="font-display text-6xl font-bold leading-none text-primary/10 sm:text-8xl">
+              0
+            </span>
+            <h2 className="mt-4 text-xl font-bold sm:text-2xl">
+              Noch keine Einträge.
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Das Klassentagebuch füllt sich automatisch — jede geplante Stunde
+              erzeugt einen Eintrag. Nach dem Unterricht trägst du dort ein, was
+              tatsächlich passiert ist.
+            </p>
+            {!isArchived && (
+              <div className="mt-8">
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href={`/classes/${classGroupId}/plan`}>
+                    <Sparkles className="size-4" />
+                    Erste Stunde planen
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-10 border-t pt-8">
+              <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                So funktioniert es
+              </p>
+              <div className="flex flex-col gap-4">
+                {(
+                  [
+                    {
+                      n: "1",
+                      title: "Stunde planen",
+                      desc: "Die KI erstellt einen vollständigen Unterrichtsplan — inkl. Phasen, Ziele und Materialien.",
+                    },
+                    {
+                      n: "2",
+                      title: "Eintrag erscheint automatisch",
+                      desc: "Sobald der Plan gespeichert ist, taucht er hier als Tagebucheintrag auf.",
+                    },
+                    {
+                      n: "3",
+                      title: "Nach dem Unterricht nachhalten",
+                      desc: "Trag ein, was tatsächlich passiert ist — so entsteht ein ehrliches Bild des Schuljahres.",
+                    },
+                  ] as const
+                ).map((item) => (
+                  <div key={item.n} className="flex items-start gap-4">
+                    <span className="w-6 shrink-0 font-display text-2xl font-bold leading-none text-primary/30">
+                      {item.n}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

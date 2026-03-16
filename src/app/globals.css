@@ -118,6 +118,57 @@
   .ink-stage  { animation: none !important; opacity: 1 !important; transform: none !important; }
   .ink-cursor { animation: none !important; }
   .ink-slipin { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .reveal     { opacity: 1 !important; transform: none !important; }
+}
+
+/* Scroll-reveal utilities — driven by IntersectionObserver via ScrollReveal component */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-slow {
+  transition-duration: 0.9s;
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.45s; }
+
+/* Paper grain overlay — subtle noise texture on marketing surfaces */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ink underline — terracotta line that draws in from left */
+.ink-underline {
+  position: relative;
+  display: inline-block;
+}
+.ink-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--primary);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: inkDraw 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
 }
 
 @layer base {

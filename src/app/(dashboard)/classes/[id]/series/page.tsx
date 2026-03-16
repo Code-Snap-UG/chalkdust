@@ -47,7 +47,7 @@ export default async function SeriesListPage({
             {classGroup.subject} &middot; Klasse {classGroup.grade}
           </p>
         </div>
-        {!isArchived && (
+        {!isArchived && seriesList.length > 0 && (
           <Button asChild>
             <Link href={`/classes/${id}/series/new`}>
               <Plus className="size-4" />
@@ -59,21 +59,67 @@ export default async function SeriesListPage({
 
       {/* List or empty state */}
       {seriesList.length === 0 ? (
-        <div className="py-16">
-          <p className="font-display text-lg font-medium text-muted-foreground/60">
-            Noch keine Unterrichtsreihen.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground/50">
-            Plane deine erste mehrstündige Einheit mit Meilensteinen.
-          </p>
-          {!isArchived && (
-            <Button asChild className="mt-6">
-              <Link href={`/classes/${id}/series/new`}>
-                <Plus className="size-4" />
-                Erste Reihe erstellen
-              </Link>
-            </Button>
-          )}
+        <div className="py-4 sm:py-8">
+          <div className="max-w-lg">
+            <span className="font-display text-6xl font-bold leading-none text-primary/10 sm:text-8xl">
+              0
+            </span>
+            <h2 className="mt-4 text-xl font-bold sm:text-2xl">
+              Noch keine Unterrichtsreihen.
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Unterrichtsreihen fassen mehrere Stunden zu einer zusammenhängenden
+              Einheit zusammen — mit Meilensteinen, Lernzielen und einem klaren
+              roten Faden durch dein Thema.
+            </p>
+            {!isArchived && (
+              <div className="mt-8">
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href={`/classes/${id}/series/new`}>
+                    <Plus className="size-4" />
+                    Erste Reihe erstellen
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-10 border-t pt-8">
+              <p className="mb-4 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                So funktioniert es
+              </p>
+              <div className="flex flex-col gap-4">
+                {[
+                  {
+                    n: "1",
+                    title: "Thema und Umfang festlegen",
+                    desc: "Gib Titel, Beschreibung und die geplante Stundenzahl an.",
+                  },
+                  {
+                    n: "2",
+                    title: "Meilensteine definieren",
+                    desc: "Strukturiere die Reihe in Abschnitte — die KI schlägt passende Phasen vor.",
+                  },
+                  {
+                    n: "3",
+                    title: "Einzelstunden planen",
+                    desc: "Aus der Reihe heraus kannst du direkt vollständige Stundenpläne generieren.",
+                  },
+                ].map((item) => (
+                  <div key={item.n} className="flex items-start gap-4">
+                    <span className="w-6 shrink-0 font-display text-2xl font-bold leading-none text-primary/30">
+                      {item.n}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col border-t">
