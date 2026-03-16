@@ -59,7 +59,6 @@ function NewClassWizard() {
   // Step 2 data
   const [curriculumMode, setCurriculumMode] = useState<"pdf" | "manual" | null>(null);
   const [fileName, setFileName] = useState("");
-  const [parsedContent, setParsedContent] = useState("");
   const [topics, setTopics] = useState<ExtractedTopic[]>([]);
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -86,7 +85,6 @@ function NewClassWizard() {
 
         const data = await res.json();
         setFileName(data.fileName);
-        setParsedContent(data.parsedContent);
         setTopics(data.topics);
         setStep(3);
       } catch {
@@ -148,7 +146,6 @@ function NewClassWizard() {
               subject,
               grade,
               sourceFileName: fileName,
-              parsedContent,
               topics,
             },
           }),

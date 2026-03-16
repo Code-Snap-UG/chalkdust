@@ -12,7 +12,6 @@ export async function saveCurriculum(
     subject: string;
     grade: string;
     sourceFileName: string;
-    parsedContent: string;
     topics: {
       title: string;
       description: string;
@@ -28,7 +27,6 @@ export async function saveCurriculum(
         subject: data.subject,
         grade: data.grade,
         sourceFileName: data.sourceFileName,
-        parsedContent: data.parsedContent,
         topicIndex: data.topics,
       })
       .onConflictDoUpdate({
@@ -37,7 +35,6 @@ export async function saveCurriculum(
           subject: data.subject,
           grade: data.grade,
           sourceFileName: data.sourceFileName,
-          parsedContent: data.parsedContent,
           topicIndex: data.topics,
         },
       })
@@ -100,7 +97,6 @@ export async function updateCurriculumTopics(
     subject: existing?.subject ?? "",
     grade: existing?.grade ?? "",
     sourceFileName: existing?.sourceFileName ?? "",
-    parsedContent: existing?.parsedContent ?? "",
     topics,
   });
 }

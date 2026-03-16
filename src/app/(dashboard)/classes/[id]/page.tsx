@@ -79,7 +79,7 @@ export default async function ClassDetailPage({
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -328,7 +328,7 @@ export default async function ClassDetailPage({
                     month: "short",
                   })}
                 </span>
-                <p className="truncate text-sm">
+                <p className="min-w-0 text-sm line-clamp-1 ">
                   {entry.plannedSummary || "Kein Titel"}
                 </p>
               </div>
@@ -363,7 +363,7 @@ export default async function ClassDetailPage({
                     month: "short",
                   })}
                 </span>
-                <p className="line-clamp-1 text-sm text-muted-foreground">
+                <p className="min-w-0 line-clamp-1 text-sm text-muted-foreground">
                   {entry.actualSummary ||
                     entry.plannedSummary ||
                     "Kein Eintrag"}

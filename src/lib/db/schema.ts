@@ -49,7 +49,6 @@ export const curricula = pgTable("curricula", {
   subject: varchar("subject", { length: 100 }).notNull(),
   grade: varchar("grade", { length: 20 }).notNull(),
   sourceFileName: varchar("source_file_name", { length: 255 }),
-  parsedContent: text("parsed_content"),
   topicIndex: jsonb("topic_index"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

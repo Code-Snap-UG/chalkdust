@@ -71,7 +71,6 @@ export const POST = withLogging("api.curriculum.upload", async (request) => {
   return NextResponse.json({
     fileName: file.name,
     storedFileName: fileName,
-    parsedContent: parsedText,
     topics: object.topics,
   });
 }, "Fehler beim Verarbeiten der Datei.");

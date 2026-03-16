@@ -50,7 +50,6 @@ export const POST = withLogging("api.classes.post", async (request) => {
       subject: curriculum.subject,
       grade: curriculum.grade,
       sourceFileName: curriculum.sourceFileName,
-      parsedContent: curriculum.parsedContent,
       topics: curriculum.topics,
     });
   }
