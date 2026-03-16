@@ -1,24 +1,17 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BookOpen, Clock, Sparkles, CheckCircle, FileEdit } from "lucide-react";
+import { Sparkles, ChevronRight } from "lucide-react";
 import { getLessonPlans } from "@/lib/actions/lesson-plans";
 import { db } from "@/lib/db";
 import { classGroups } from "@/lib/db/schema";
 import { inArray } from "drizzle-orm";
+import { cn } from "@/lib/utils";
 
 export default async function LessonPlansPage() {
   const plans = await getLessonPlans();
 
   const classGroupIds = [...new Set(plans.map((p) => p.classGroupId))];
-  const classGroupMap: Record<string, { name: string; subject: string; grade: string }> = {};
+  const classGroupMap: Record<string, { id: string; name: string; subject: string; grade: string }> = {};
 
   if (classGroupIds.length > 0) {
     const cgs = await db
@@ -26,99 +19,138 @@ export default async function LessonPlansPage() {
       .from(classGroups)
       .where(inArray(classGroups.id, classGroupIds));
     for (const cg of cgs) {
-      classGroupMap[cg.id] = { name: cg.name, subject: cg.subject, grade: cg.grade };
+      classGroupMap[cg.id] = { id: cg.id, name: cg.name, subject: cg.subject, grade: cg.grade };
     }
   }
 
+  // Group plans by class, preserving recency order (plans are sorted by createdAt desc)
+  const seenClassIds: string[] = [];
+  const plansByClass = new Map<string, typeof plans>();
+  for (const plan of plans) {
+    if (!plansByClass.has(plan.classGroupId)) {
+      seenClassIds.push(plan.classGroupId);
+      plansByClass.set(plan.classGroupId, []);
+    }
+    plansByClass.get(plan.classGroupId)!.push(plan);
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Unterrichtspläne
-          </h1>
-          <p className="text-muted-foreground">
-            Alle erstellten Unterrichtspläne auf einen Blick.
-          </p>
-        </div>
+    <div className="flex flex-col gap-8">
+
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Unterrichtspläne
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Alle erstellten Unterrichtspläne auf einen Blick.
+        </p>
       </div>
 
       {plans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-          <BookOpen className="size-8 text-muted-foreground" />
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">
-              Noch keine Unterrichtspläne
-            </h2>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Wähle eine Klasse und erstelle deinen ersten KI-gestützten
-              Unterrichtsplan.
-            </p>
-          </div>
-          <Button asChild>
+
+        /* ── Empty state ── */
+        <div className="py-12">
+          <p className="font-display text-lg font-medium text-muted-foreground/60">
+            Noch keine Unterrichtspläne.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground/50">
+            Wähle eine Klasse und erstelle deinen ersten KI-gestützten Plan.
+          </p>
+          <Button asChild className="mt-6">
             <Link href="/classes">
-              <Sparkles className="mr-2 size-4" />
+              <Sparkles className="size-4" />
               Zu meinen Klassen
             </Link>
           </Button>
         </div>
+
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {plans.map((plan) => {
-            const cg = classGroupMap[plan.classGroupId];
+
+        /* ── Grouped list ── */
+        <div className="flex flex-col gap-10">
+          {seenClassIds.map((classId) => {
+            const cg = classGroupMap[classId];
+            const classPlans = plansByClass.get(classId) ?? [];
+
             return (
-              <Link key={plan.id} href={`/lesson-plans/${plan.id}`}>
-                <Card className="group cursor-pointer transition-shadow hover:shadow-md">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                        <BookOpen className="size-4 text-primary" />
-                      </div>
-                      <Badge
-                        variant={
-                          plan.status === "approved" ? "default" : "secondary"
-                        }
-                        className="text-xs"
+              <div key={classId}>
+
+                {/* Class header */}
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {cg ? (
+                      <Link
+                        href={`/classes/${cg.id}`}
+                        className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        {plan.status === "approved" ? (
-                          <>
-                            <CheckCircle className="mr-1 size-3" />
-                            Freigegeben
-                          </>
-                        ) : (
-                          <>
-                            <FileEdit className="mr-1 size-3" />
-                            Entwurf
-                          </>
-                        )}
-                      </Badge>
-                    </div>
-                    <CardTitle className="mt-2 text-base leading-snug">
-                      {plan.topic}
-                    </CardTitle>
-                    {cg && (
-                      <CardDescription>
-                        {cg.name} &ndash; {cg.subject} (Klasse {cg.grade})
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="size-3" />
-                        {plan.durationMinutes} Min.
-                      </div>
-                      <span>
-                        {plan.lessonDate
-                          ? new Date(plan.lessonDate).toLocaleDateString(
-                              "de-DE"
-                            )
-                          : "Kein Datum"}
+                        {cg.name} &ndash; {cg.subject}
+                      </Link>
+                    ) : (
+                      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        Unbekannte Klasse
                       </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    )}
+                    {cg && (
+                      <span className="text-xs text-muted-foreground/40">
+                        Klasse {cg.grade}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs tabular-nums text-muted-foreground/40">
+                    {classPlans.length}{" "}
+                    {classPlans.length === 1 ? "Plan" : "Pläne"}
+                  </span>
+                </div>
+
+                {/* Plan rows */}
+                <div className="flex flex-col border-t">
+                  {classPlans.map((plan) => {
+                    const isApproved = plan.status === "approved";
+                    return (
+                      <Link
+                        key={plan.id}
+                        href={`/lesson-plans/${plan.id}`}
+                        className="group -mx-1 flex items-baseline gap-3 rounded-sm border-b px-1 py-3.5 transition-colors hover:bg-muted/40 sm:gap-4"
+                      >
+                        {/* Date */}
+                        <span className="w-12 shrink-0 text-xs tabular-nums text-muted-foreground">
+                          {plan.lessonDate
+                            ? new Date(plan.lessonDate).toLocaleDateString(
+                                "de-DE",
+                                { day: "numeric", month: "short" }
+                              )
+                            : <span className="text-muted-foreground/30">&ndash;</span>}
+                        </span>
+
+                        {/* Topic */}
+                        <p className="min-w-0 flex-1 text-sm font-medium line-clamp-1">
+                          {plan.topic || "Kein Titel"}
+                        </p>
+
+                        {/* Duration */}
+                        <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:inline">
+                          {plan.durationMinutes} Min.
+                        </span>
+
+                        {/* Status */}
+                        <span
+                          className={cn(
+                            "hidden shrink-0 text-[0.65rem] font-semibold tracking-[0.1em] uppercase sm:inline",
+                            isApproved
+                              ? "text-primary"
+                              : "text-muted-foreground/35"
+                          )}
+                        >
+                          {isApproved ? "Freigegeben" : "Entwurf"}
+                        </span>
+
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-muted-foreground/70" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>

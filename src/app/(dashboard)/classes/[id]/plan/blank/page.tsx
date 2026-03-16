@@ -1,4 +1,6 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { getClassGroup } from "@/lib/actions/class-groups";
 import { BlankPlanForm } from "./blank-plan-form";
 
@@ -18,8 +20,15 @@ export default async function BlankPlanPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
+        <Link
+          href={`/classes/${id}/plan`}
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3" />
+          Stunde planen
+        </Link>
         <h2 className="text-xl font-bold tracking-tight">Manuell erstellen</h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Erstelle einen leeren Unterrichtsplan und fülle ihn selbst aus.
         </p>
       </div>

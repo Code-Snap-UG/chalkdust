@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -162,14 +163,20 @@ export function SeriesDetailClient({
   classGroup: ClassGroup;
   series: SeriesData;
 }) {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [series, setSeries] = useState(initialSeries);
+  const [showGeneratedNotice, setShowGeneratedNotice] = useState(
+    searchParams.get("from") === "generate"
+  );
   const isArchived = classGroup.status === "archived";
 
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const [deletingMilestoneId, setDeletingMilestoneId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editEstLessons, setEditEstLessons] = useState(1);
+  const [editGoals, setEditGoals] = useState<{ text: string }[]>([]);
+  const [newGoalText, setNewGoalText] = useState("");
 
   // Arc panel state
   const [arcLoadingId, setArcLoadingId] = useState<string | null>(null);
@@ -196,6 +203,8 @@ export function SeriesDetailClient({
     setEditTitle(m.title);
     setEditDescription(m.description || "");
     setEditEstLessons(m.estimatedLessons);
+    setEditGoals(parseLearningGoals(m.learningGoals));
+    setNewGoalText("");
   }
 
   async function saveEditMilestone() {
@@ -209,6 +218,7 @@ export function SeriesDetailClient({
           title: editTitle,
           description: editDescription || null,
           estimatedLessons: editEstLessons,
+          learningGoals: editGoals,
         }),
       }
     );
@@ -222,6 +232,20 @@ export function SeriesDetailClient({
       }));
     }
     setEditingMilestoneId(null);
+  }
+
+  async function confirmDeleteMilestone(milestoneId: string) {
+    const res = await fetch(
+      `/api/series/${series.id}/milestones/${milestoneId}`,
+      { method: "DELETE" }
+    );
+    if (res.ok) {
+      setSeries((prev) => ({
+        ...prev,
+        milestones: prev.milestones.filter((m) => m.id !== milestoneId),
+      }));
+    }
+    setDeletingMilestoneId(null);
   }
 
   async function generateArc(milestoneId: string) {
@@ -290,12 +314,18 @@ export function SeriesDetailClient({
       }),
     });
     if (res.ok) {
-      router.refresh();
+      const newMilestone = await res.json();
+      const full: Milestone = { ...newMilestone, lessonPlans: [], lessonSlots: [] };
+      setSeries((prev) => ({
+        ...prev,
+        milestones: [...prev.milestones, full],
+      }));
+      startEditMilestone(full);
     }
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-6">
       {/* Header */}
       <div>
         <Link
@@ -375,6 +405,25 @@ export function SeriesDetailClient({
       </div>
 
       {/* Milestone Timeline */}
+      {showGeneratedNotice && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="size-4 text-primary" />
+            <p>
+              Reihe erstellt. Du kannst Meilensteine jetzt direkt hier anpassen.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setShowGeneratedNotice(false)}
+          >
+            Schließen
+          </Button>
+        </div>
+      )}
+
       <div className="relative">
         {series.milestones.map((milestone, idx) => {
           const done = isMilestoneDone(milestone);
@@ -474,6 +523,65 @@ export function SeriesDetailClient({
                         className="w-24"
                       />
                     </div>
+                    <div className="grid gap-2">
+                      <Label>Lernziele</Label>
+                      {editGoals.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {editGoals.map((g, gi) => (
+                            <span
+                              key={gi}
+                              className="flex items-center gap-1 rounded-full border border-border bg-muted/40 pl-2.5 pr-1 py-0.5 text-xs"
+                            >
+                              {g.text}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditGoals((prev) =>
+                                    prev.filter((_, i) => i !== gi)
+                                  )
+                                }
+                                className="rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                                aria-label="Lernziel entfernen"
+                              >
+                                <X className="size-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-1.5">
+                        <Input
+                          value={newGoalText}
+                          onChange={(e) => setNewGoalText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const trimmed = newGoalText.trim();
+                              if (trimmed) {
+                                setEditGoals((prev) => [...prev, { text: trimmed }]);
+                                setNewGoalText("");
+                              }
+                            }
+                          }}
+                          placeholder="Lernziel eingeben und Enter drücken…"
+                          className="flex-1 text-sm"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const trimmed = newGoalText.trim();
+                            if (trimmed) {
+                              setEditGoals((prev) => [...prev, { text: trimmed }]);
+                              setNewGoalText("");
+                            }
+                          }}
+                        >
+                          <Plus className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                     <div className="flex gap-1.5">
                       <Button size="sm" onClick={saveEditMilestone}>
                         <Check className="mr-1 size-3" />
@@ -491,6 +599,32 @@ export function SeriesDetailClient({
                   </div>
                 ) : (
                   <>
+                    {/* Inline delete confirmation */}
+                    {deletingMilestoneId === milestone.id && (
+                      <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
+                        <p className="text-sm text-foreground">
+                          Meilenstein{milestone.lessonPlans.length > 0 ? " und alle verknüpften Stunden" : ""} löschen?
+                        </p>
+                        <div className="flex shrink-0 gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setDeletingMilestoneId(null)}
+                          >
+                            Abbrechen
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => confirmDeleteMilestone(milestone.id)}
+                          >
+                            Löschen
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
@@ -502,13 +636,11 @@ export function SeriesDetailClient({
                           >
                             {milestone.title}
                           </h3>
-                          {isCurrent &&
-                            milestone.lessonPlans.length > 0 && (
-                              <Badge variant="secondary" className="shrink-0 text-xs">
-                                {completedCount} von{" "}
-                                {milestone.estimatedLessons} St.
-                              </Badge>
-                            )}
+                          <Badge variant="secondary" className="shrink-0 text-xs">
+                            {isCurrent && milestone.lessonPlans.length > 0
+                              ? `${completedCount}/${milestone.estimatedLessons} St.`
+                              : `${milestone.estimatedLessons} St.`}
+                          </Badge>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
@@ -518,13 +650,24 @@ export function SeriesDetailClient({
                           </Badge>
                         )}
                         {!done && !isArchived && (
-                          <button
-                            type="button"
-                            onClick={() => startEditMilestone(milestone)}
-                            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover:opacity-100"
-                          >
-                            <Pencil className="size-3.5" />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => startEditMilestone(milestone)}
+                              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover:opacity-100"
+                              aria-label="Meilenstein bearbeiten"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingMilestoneId(milestone.id)}
+                              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-destructive group-hover:opacity-100"
+                              aria-label="Meilenstein löschen"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
