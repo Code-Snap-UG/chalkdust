@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   Plus,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { getClassGroups } from "@/lib/actions/class-groups";
@@ -147,39 +146,8 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* AI CTA — right column */}
+        {/* Quick links — right column */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 rounded-sm border bg-primary/5 p-6">
-            <div>
-              <Sparkles className="size-5 text-primary" />
-              <h2 className="mt-3 text-lg font-bold">KI-gestützte Planung</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                Wähle eine Klasse und lass die KI in Minuten einen vollständigen
-                Unterrichtsplan erstellen — abgestimmt auf deinen Lehrplan.
-              </p>
-            </div>
-            <ul className="space-y-2 text-sm text-muted-foreground border-t pt-4">
-              {[
-                "Am Lehrplan ausgerichtet",
-                "Differenzierung für alle Lernenden",
-                "Verfeinern per Chat",
-                "Klassentagebuch & Fortschritt",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-primary">–</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <Button className="w-full" asChild>
-              <Link href="/classes">
-                <Sparkles className="mr-2 size-4" />
-                Klasse wählen & planen
-              </Link>
-            </Button>
-          </div>
-
-          {/* Quick links */}
           {classes.length > 0 && (
             <div className="flex flex-col gap-1">
               <p className="px-1 text-xs text-muted-foreground">Meine Klassen</p>
